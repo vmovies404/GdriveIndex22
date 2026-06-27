@@ -1,0 +1,9 @@
+const len = window.drive_names.length;
+let html = '';
+for (let i = 0; i < len; i++) {
+  html += `<a href="/${i}:/" class="gdi-drive-card">
+    <span class="gdi-drive-card-icon"><i class="bi bi-folder-fill"></i></span>
+    <span class="gdi-drive-card-name">${window.drive_names[i]}</span>
+  </a>`;
+}
+$('#list').html(html);

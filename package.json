@@ -1,0 +1,69 @@
+{
+  "name": "@googledrive/index",
+  "version": "2.5.9",
+  "description": "Google Drive Index - A serverless Google Drive directory listing on Cloudflare Workers",
+  "private": false,
+  "main": "src/worker.js",
+  "files": [
+    "src/worker.js",
+    "src/app.js",
+    "src/app.min.js",
+    "assets/gdi.css",
+    "assets/gdi.min.css",
+    "assets/homepage.js",
+    "assets/homepage.min.js",
+    "assets/download_error.html",
+    "assets/disable_download.html",
+    "images/favicon.ico",
+    "images/bhadoo-cloud-logo-white.svg",
+    "images/poster.jpg",
+    "images/music.jpg",
+    "sw.js",
+    "generator/worker.js",
+    "schema.sql",
+    "wrangler.toml"
+  ],
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "publish": "wrangler deploy",
+    "start": "wrangler dev",
+    "lint": "eslint src/ assets/",
+    "lint:fix": "eslint src/ assets/ --fix",
+    "format": "prettier --write \"src/**/*.js\" \"assets/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"assets/**/*.js\"",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run format:check && npm run typecheck",
+    "precommit": "npm run check",
+    "build": "node scripts/build.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "google-drive",
+    "cloudflare-workers",
+    "serverless",
+    "file-index",
+    "directory-listing"
+  ],
+  "author": "Parveen Bhadoo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/GoogleDriveIndex/Google-Drive-Index"
+  },
+  "bugs": {
+    "url": "https://gitlab.com/GoogleDriveIndex/Google-Drive-Index/-/issues"
+  },
+  "homepage": "https://gdi.js.org",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.80.0"
+  }
+}

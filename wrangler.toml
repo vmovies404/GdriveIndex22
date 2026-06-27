@@ -1,0 +1,34 @@
+name = "google-drive-index"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+# nodejs_compat is needed ONLY for Hyperdrive + pg npm package.
+# It requires migrating the worker to ES Module format (export default { fetch }).
+# Leave commented until that migration is done.
+# compatibility_flags = ["nodejs_compat"]
+
+# KV Namespace binding — used for user sessions, single_session, ip_lock, and KV login_database
+# Workers Paid plan recommended for production KV usage (free tier has lower limits)
+[[kv_namespaces]]
+binding = "ENV"
+id = "31a442e25dd6448eb650331916f64534"
+preview_id = "cd438d0e1a4a4ee6915cfad327e86944"
+
+# D1 Database binding — used when login_database = "D1"
+# Workers Paid plan required for production D1 usage
+# Create with: npx wrangler d1 create gdi-users
+# Then replace database_id with the ID returned above, uncomment the block below, and run:
+#   npx wrangler d1 execute gdi-users --file=./schema.sql
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "gdi-users"
+# database_id = "placeholder-replace-with-real-id"
+
+# Hyperdrive binding — used when login_database = "Hyperdrive"
+# Workers Paid plan required. Hyperdrive accelerates connections to external PostgreSQL.
+# Create with: npx wrangler hyperdrive create gdi-hyperdrive --connection-string="postgres://user:pass@host/db"
+# Then replace id with the ID returned above.
+# For local dev, also set env var: WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://user:pass@localhost/db
+# Uncomment when ready to use Hyperdrive:
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "placeholder-replace-with-real-id"
