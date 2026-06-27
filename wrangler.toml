@@ -10,8 +10,8 @@ compatibility_date = "2024-09-23"
 # Workers Paid plan recommended for production KV usage (free tier has lower limits)
 [[kv_namespaces]]
 binding = "ENV"
-id = "31a442e25dd6448eb650331916f64534"
-preview_id = "cd438d0e1a4a4ee6915cfad327e86944"
+id = "99f3c215967f4a4482d255d8232f2d09"
+preview_id = "1d20512eb2494078b29e2d319e7fb639"
 
 # D1 Database binding — used when login_database = "D1"
 # Workers Paid plan required for production D1 usage

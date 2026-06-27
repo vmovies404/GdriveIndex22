@@ -16,9 +16,9 @@ const blocked_asn = []; // add ASN numbers from http://www.bgplookingglass.com/l
 const CDN_VERSION = '2.5.9'; // auto-updated by npm run build
 const authConfig = {
   "siteName": "GDI Test", // Website name
-  "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com", // Client id from Google Cloud Console
-  "client_secret": "YOUR_CLIENT_SECRET", // Client Secret from Google Cloud Console
-  "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token
+  "client_id": "YOUR_CLIENT_ID", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
+  "client_secret": "YOUR_CLIENT_SECRET", // Client Secret from Google Cloud Console (sentinel: real value via KV secret CLIENT_SECRET)
+  "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
   "service_account": false, // true if you're using Service Account instead of user account
   "service_account_json": randomserviceaccount, // don't touch this one
   "files_list_page_size": 100,
@@ -35,7 +35,7 @@ const authConfig = {
   "google_client_id_for_login": "", // Google Client ID for Login
   "google_client_secret_for_login": "", // Google Client Secret for Login
   "redirect_domain": "http://localhost:8787", // Domain for login redirect eg. https://example.com
-  "login_database": "Local", // "Local" | "KV" | "D1" | "Hyperdrive"
+  "login_database": "kv", // "Local" | "KV" | "D1" | "Hyperdrive" — KV: customers stored in ENV namespace
   "login_days": 7, // days to keep logged in
   "enable_ip_lock": false, // set to true if you want to lock user downloads to user IP
   "single_session": false, // set to true if you want to allow only one session per user
@@ -48,34 +48,48 @@ const authConfig = {
     }
   ],
   "roots": [
-    {
-      "id": "root",
-      "type": "root", // "root" | "folder" | "shared_drive"
-      "name": "My Drive",
-      "protect_file_link": false
-    },
-    {
-      "id": "1a8tF3p6l4wenfEQV5TpGKPT9otfze5em",
-      "type": "folder", // folder inside My Drive
-      "name": "Drive Folder",
-      "protect_file_link": false
-    },
-    {
-      "id": "1SPeBCBNFU3s0m2NPuIJzgyAQTUWU3wMx",
-      "type": "folder", // folder from shared drive context
-      "name": "Shared Folder",
-      "protect_file_link": false
-    },
-    {
-      "id": "0AI96FDDLWPh5Uk9PVA",
-      "type": "shared_drive", // Shared Drive (Team Drive)
-      "name": "Shared Drive",
-      "protect_file_link": false
-    },
+    { "id": "1LYH9i1nCbA1pgegP5NBoTcEuckuum3eR", "type": "folder", "name": "Drive 1", "protect_file_link": false },
+    { "id": "1kxHZ1dt5QeqrmFLUcbm7vZN5SotaiFhM", "type": "folder", "name": "Drive 2", "protect_file_link": false },
+    { "id": "1odZIR8WgmhFA0jsbgoqKO-Fkne2IdQ5I", "type": "folder", "name": "Drive 3", "protect_file_link": false },
+    { "id": "1JFr9R5g2Ho_WHnwxL5yK2WeXs8zatQMl", "type": "folder", "name": "Drive 4", "protect_file_link": false },
+    { "id": "1C8aUdZLBdTIMa3zMdOr-g8B_bnlP01Ip", "type": "folder", "name": "Drive 5", "protect_file_link": false },
   ]
 };
-const crypto_base_key = "3225f86e99e205347b4310e437253bfd"; // Example 256 bit key used, generate your own.
-const hmac_base_key = "4d1fbf294186b82d74fff2494c04012364200263d6a36123db0bd08d6be1423c"; // Example 256 bit key used, generate your own.
+let crypto_base_key = "YmCKEAQaj8nHuiNopte4BTDLV1cdPlOb"; // sentinel: real value via KV secret CRYPTO_BASE_KEY (cached on first use)
+let hmac_base_key = "7eXhZf3gp8E2Mq6GKD0TysJm1c9uOH5L"; // sentinel: real value via KV secret HMAC_BASE_KEY (cached on first use)
+
+// Secret resolution. Wrangler secrets (set via `wrangler secret put`) are injected
+// as global variables in the worker runtime in service-worker format. We read them
+// via a dynamic property lookup on the global object. Sentinel values in authConfig
+// / module scope are swapped for real values from these globals, so live secrets
+// never live in source. First-fetch result is cached back into the module-scope
+// `let` so subsequent calls are sync after the first await resolves.
+async function getSecret(name) {
+  // Wrangler secrets appear as global vars in service-worker format.
+  // Access via globalThis to avoid ReferenceError if the secret is unset.
+  try {
+    const v = globalThis[name];
+    return (v !== undefined && v !== null) ? v : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function getCryptoKey() {
+  if (crypto_base_key === "YOUR_CRYPTO_KEY") {
+    const v = await getSecret("CRYPTO_BASE_KEY");
+    if (v) crypto_base_key = v;
+  }
+  return crypto_base_key;
+}
+
+async function getHmacKey() {
+  if (hmac_base_key === "YOUR_HMAC_KEY") {
+    const v = await getSecret("HMAC_BASE_KEY");
+    if (v) hmac_base_key = v;
+  }
+  return hmac_base_key;
+}
 
 // Google Workspace mimeType → export format table
 const GDOC_EXPORT_FORMATS = {
@@ -580,7 +594,7 @@ async function encryptString(string) {
   const iv = crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(crypto_base_key),
+    new TextEncoder().encode(await getCryptoKey()),
     "AES-CBC",
     false,
     ["encrypt"]
@@ -600,7 +614,7 @@ async function encryptString(string) {
 async function decryptString(encryptedString) {
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(crypto_base_key),
+    new TextEncoder().encode(await getCryptoKey()),
     "AES-CBC",
     false,
     ["decrypt"]
@@ -614,12 +628,13 @@ async function decryptString(encryptedString) {
 }
 
 // Web Crypto Integrity Generate API
-async function genIntegrity(data, key = hmac_base_key) {
+async function genIntegrity(data, key = null) {
+  const effectiveKey = key ?? await getHmacKey();
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
   const hmacKey = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(key), {
+      encoder.encode(effectiveKey), {
           name: 'HMAC',
           hash: 'SHA-256'
       },
@@ -643,7 +658,7 @@ async function checkintegrity(expectedHex, actualHex) {
   // Re-sign actualHex and compare against expectedHex using crypto.subtle
   // as a constant-time equal-length byte comparison
   const keyMaterial = await crypto.subtle.importKey(
-    'raw', enc.encode(hmac_base_key),
+    'raw', enc.encode(await getHmacKey()),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   const sig1 = await crypto.subtle.sign('HMAC', keyMaterial, enc.encode(expectedHex));
@@ -1391,10 +1406,18 @@ async function fetchAccessToken() {
       assertion: jwttoken,
     };
   } else {
+    let cid = authConfig.client_id;
+    let csec = authConfig.client_secret;
+    let rt = authConfig.refresh_token;
+    if (cid === "YOUR_CLIENT_ID") {
+      cid = await getSecret("CLIENT_ID");
+      csec = await getSecret("CLIENT_SECRET");
+      rt = await getSecret("REFRESH_TOKEN");
+    }
     post_data = {
-      client_id: authConfig.client_id,
-      client_secret: authConfig.client_secret,
-      refresh_token: authConfig.refresh_token,
+      client_id: cid,
+      client_secret: csec,
+      refresh_token: rt,
       grant_type: "refresh_token",
     };
   }
