@@ -30,7 +30,7 @@ const authConfig = {
   "file_link_expiry": 7, // expire file link in set number of days
   "search_all_drives": true, // search all of your drives instead of current drive if set to true
   "enable_login": true, // set to true if you want to add login system
-  "enable_signup": false, // set to true if you want to add signup system
+  "enable_signup": true, // set to true if you want to add signup system
   "enable_social_login": true, // set to true if you want to add social login system
   "google_client_id_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_ID", // Google Client ID for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_ID)
   "google_client_secret_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_SECRET", // Google Client Secret for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_SECRET)
@@ -997,10 +997,17 @@ async function handleRequest(request, event) {
           }
         }
         if (!user_found) {
-          const response = new Response('', {});
-          response.headers.set('Set-Cookie', `session=; path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
-          response.headers.set('Refresh', '0; url=/login?error=Account+not+authorised');
-          return response;
+          // Auto-register: Google-verified email is trusted. Create as customer.
+          if (login_database == 'kv') {
+            await ENV.put(username, 'customer');
+            kv_key = 'customer';
+            user_found = true;
+          } else {
+            const response = new Response('', {});
+            response.headers.set('Set-Cookie', `session=; path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+            response.headers.set('Refresh', '0; url=/login?error=Account+not+authorised');
+            return response;
+          }
         }
         const current_time = Date.now(); // this results in a timestamp of the number of milliseconds since epoch.
         const session_time = current_time + 86400000 * authConfig.login_days;
