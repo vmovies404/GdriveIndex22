@@ -31,10 +31,10 @@ const authConfig = {
   "search_all_drives": true, // search all of your drives instead of current drive if set to true
   "enable_login": true, // set to true if you want to add login system
   "enable_signup": false, // set to true if you want to add signup system
-  "enable_social_login": false, // set to true if you want to add social login system
-  "google_client_id_for_login": "", // Google Client ID for Login
-  "google_client_secret_for_login": "", // Google Client Secret for Login
-  "redirect_domain": "http://localhost:8787", // Domain for login redirect eg. https://example.com
+  "enable_social_login": true, // set to true if you want to add social login system
+  "google_client_id_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_ID", // Google Client ID for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_ID)
+  "google_client_secret_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_SECRET", // Google Client Secret for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_SECRET)
+  "redirect_domain": "https://google-drive-index.sisisabia58.workers.dev", // Domain for login redirect eg. https://example.com
   "login_database": "kv", // "Local" | "KV" | "D1" | "Hyperdrive" — KV: customers stored in ENV namespace
   "login_days": 7, // days to keep logged in
   "enable_ip_lock": false, // set to true if you want to lock user downloads to user IP
@@ -385,6 +385,190 @@ const login_html = `<!DOCTYPE html>
   </script>
 </body></html>`;
 
+const admin_html = `<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — ${authConfig.siteName}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    body { background: #0d1117; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .subtitle { color: #8b9ab0; font-size: 13px; margin-bottom: 24px; }
+    .card { background: #161b22; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .form-control, .form-select { background: #0d1117 !important; border-color: #2d3748 !important; color: #e2e8f0 !important; font-size: 13px; border-radius: 5px; }
+    .form-control:focus, .form-select:focus { border-color: #4d9fec !important; box-shadow: 0 0 0 3px rgba(77,159,236,.1) !important; }
+    .btn { font-size: 13px; border-radius: 5px; }
+    .btn-primary { background: #4d9fec; border-color: #4d9fec; }
+    .btn-primary:hover { background: #3a8fd4; border-color: #3a8fd4; }
+    .btn-danger { background: #f87171; border-color: #f87171; }
+    .btn-danger:hover { background: #e35555; border-color: #e35555; }
+    .btn-ghost { background: transparent; border: 1px solid #2d3748; color: #8b9ab0; }
+    .btn-ghost:hover { background: #1e2736; color: #e2e8f0; }
+    table { width: 100%; }
+    th { color: #8b9ab0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid #2d3748; }
+    td { padding: 12px; border-bottom: 1px solid #1e2736; vertical-align: middle; }
+    .role-badge { font-size: 11px; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
+    .role-admin { background: rgba(248,113,113,.15); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
+    .role-customer { background: rgba(77,159,236,.15); color: #4d9fec; border: 1px solid rgba(77,159,236,.3); }
+    .role-legacy { background: rgba(139,154,176,.15); color: #8b9ab0; border: 1px solid rgba(139,154,176,.3); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .top-bar a { color: #8b9ab0; text-decoration: none; font-size: 13px; }
+    .top-bar a:hover { color: #e2e8f0; }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 13px; opacity: 0; transition: opacity .3s; z-index: 9999; }
+    .toast.show { opacity: 1; }
+    .toast-success { background: #34d399; }
+    .toast-error { background: #f87171; }
+    .add-form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .add-form .form-control { flex: 1; min-width: 200px; }
+    .add-form .form-select { width: 130px; flex-shrink: 0; }
+    .empty-row { text-align: center; color: #8b9ab0; padding: 32px !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <div>
+        <h1><i class="bi bi-shield-lock"></i> Admin Panel</h1>
+        <div class="subtitle">Manage customer access — ${authConfig.siteName}</div>
+      </div>
+      <div>
+        <a href="/"><i class="bi bi-arrow-left"></i> Back to portal</a>
+        &nbsp;&nbsp;
+        <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h5 style="margin-bottom: 12px;"><i class="bi bi-person-plus"></i> Add user</h5>
+      <form class="add-form" id="add-form">
+        <input type="email" class="form-control" id="new-email" placeholder="customer@example.com" required>
+        <select class="form-select" id="new-role">
+          <option value="customer">customer</option>
+          <option value="admin">admin</option>
+        </select>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h5 style="margin-bottom: 12px;"><i class="bi bi-people"></i> Users <span id="user-count" style="color:#8b9ab0;font-weight:normal;font-size:13px;"></span></h5>
+      <table>
+        <thead>
+          <tr><th>Email</th><th>Role</th><th style="text-align:right;">Actions</th></tr>
+        </thead>
+        <tbody id="user-table">
+          <tr><td colspan="3" class="empty-row"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const currentUser = window.CURRENT_USER;
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show toast-' + (type || 'success');
+      setTimeout(() => t.className = 'toast toast-' + (type || 'success'), 2500);
+    }
+
+    async function loadUsers() {
+      try {
+        const r = await fetch('/admin/api/users');
+        if (!r.ok) throw new Error('Failed to load');
+        const users = await r.json();
+        const tbody = document.getElementById('user-table');
+        document.getElementById('user-count').textContent = '(' + users.length + ')';
+        if (users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="empty-row">No users yet. Add one above.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => {
+          const isSelf = u.email === currentUser;
+          const roleClass = 'role-' + u.role;
+          const roleOptions = ['customer', 'admin']
+            .filter(r => r !== u.role)
+            .map(r => '<option value="' + r + '">' + r + '</option>')
+            .join('');
+          return '<tr>' +
+            '<td>' + (isSelf ? u.email + ' <span style="color:#8b9ab0;font-size:11px;">(you)</span>' : u.email) + '</td>' +
+            '<td><span class="role-badge ' + roleClass + '">' + u.role + '</span></td>' +
+            '<td style="text-align:right; white-space:nowrap;">' +
+              (u.role === 'legacy'
+                ? '<span style="color:#8b9ab0;font-size:11px;">password login (no role change)</span>'
+                : '<select class="form-select form-select-sm d-inline-block" style="width:auto;" onchange="changeRole(\\'' + u.email + '\\', this.value)"><option value="' + u.role + '" selected>' + u.role + '</option>' + roleOptions + '</select>') +
+              (isSelf ? '' : ' <button class="btn btn-danger btn-sm ms-2" onclick="removeUser(\\'' + u.email + '\\')"><i class="bi bi-trash"></i></button>') +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (e) {
+        showToast('Load failed: ' + e.message, 'error');
+      }
+    }
+
+    document.getElementById('add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('new-email').value.trim();
+      const role = document.getElementById('new-role').value;
+      if (!email) return;
+      const r = await fetch('/admin/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role })
+      });
+      const data = await r.json();
+      if (r.ok && data.ok) {
+        showToast('Added ' + email);
+        document.getElementById('new-email').value = '';
+        loadUsers();
+      } else {
+        showToast(data.message || 'Add failed', 'error');
+      }
+    });
+
+    async function changeRole(email, role) {
+      const r = await fetch('/admin/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role })
+      });
+      const data = await r.json();
+      if (r.ok && data.ok) {
+        showToast(email + ' → ' + role);
+        loadUsers();
+      } else {
+        showToast(data.message || 'Update failed', 'error');
+        loadUsers();
+      }
+    }
+
+    async function removeUser(email) {
+      if (!confirm('Remove ' + email + '?')) return;
+      const r = await fetch('/admin/api/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await r.json();
+      if (r.ok && data.ok) {
+        showToast('Removed ' + email);
+        loadUsers();
+      } else {
+        showToast(data.message || 'Remove failed', 'error');
+      }
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>`;
+
 
 const not_found = `<!DOCTYPE html>
 <html lang=en>
@@ -670,8 +854,13 @@ async function checkintegrity(expectedHex, actualHex) {
   return diff === 0;
 }
 
-function login() {
-  return new Response(login_html, {
+async function login() {
+  let html = login_html;
+  if (authConfig.google_client_id_for_login === "YOUR_GOOGLE_LOGIN_CLIENT_ID") {
+    const realId = await getSecret("GOOGLE_LOGIN_CLIENT_ID");
+    if (realId) html = html.split("YOUR_GOOGLE_LOGIN_CLIENT_ID").join(realId);
+  }
+  return new Response(html, {
     status: 401,
     headers: {
       'Content-Type': 'text/html; charset=utf-8'
@@ -753,7 +942,13 @@ async function handleRequest(request, event) {
         });
       }
 
-      // Use the authorization code to obtain access token and ID token		
+      // Use the authorization code to obtain access token and ID token
+      let google_login_cid = authConfig.google_client_id_for_login;
+      let google_login_csec = authConfig.google_client_secret_for_login;
+      if (google_login_cid === "YOUR_GOOGLE_LOGIN_CLIENT_ID") {
+        google_login_cid = await getSecret("GOOGLE_LOGIN_CLIENT_ID");
+        google_login_csec = await getSecret("GOOGLE_LOGIN_CLIENT_SECRET");
+      }
       const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
@@ -761,8 +956,8 @@ async function handleRequest(request, event) {
         },
         body: new URLSearchParams({
           code,
-          client_id: authConfig.google_client_id_for_login,
-          client_secret: authConfig.google_client_secret_for_login,
+          client_id: google_login_cid,
+          client_secret: google_login_csec,
           redirect_uri: authConfig.redirect_domain + '/google_callback',
           grant_type: 'authorization_code',
         }),
@@ -809,8 +1004,9 @@ async function handleRequest(request, event) {
         }
         const current_time = Date.now(); // this results in a timestamp of the number of milliseconds since epoch.
         const session_time = current_time + 86400000 * authConfig.login_days;
-        // kv_key is only defined when using KV database; use empty string for local/other DB modes
-        const encryptedSession = `${await encryptString(username)}|${await encryptString(kv_key || '')}|${await encryptString(session_time.toString())}`;
+        // kv_key is the user's role string ("admin" or "customer") for Google-login users.
+        // Encode it as the 2nd session slot — /admin checks if this decrypts to "admin".
+        const encryptedSession = `${await encryptString(username)}|${await encryptString(kv_key || 'customer')}|${await encryptString(session_time.toString())}`;
         if (authConfig.single_session) {
           await ENV.put(username + '_session', encryptedSession);
         }
@@ -1111,6 +1307,80 @@ async function handleRequest(request, event) {
       status: 404,
       headers: { 'Content-Type': 'application/json;charset=UTF-8' }
     });
+  } else if (path == '/admin' || path.startsWith('/admin/')) {
+    // Admin gate: session 2nd slot must decrypt to "admin"
+    const cookie = request.headers.get('cookie');
+    if (!cookie || !cookie.includes('session=')) {
+      return new Response('', { status: 302, headers: { 'Location': '/login' } });
+    }
+    const sessionMatch = cookie.match(/(?:^|;\s*)session=([^;]*)/);
+    const session = sessionMatch ? sessionMatch[1].trim() : null;
+    if (!session) {
+      return new Response('', { status: 302, headers: { 'Location': '/login' } });
+    }
+    let adminEmail;
+    try {
+      adminEmail = await decryptString(session.split('|')[0]);
+    } catch (_) {
+      return new Response('', { status: 302, headers: { 'Location': '/login' } });
+    }
+    let adminRole;
+    try {
+      adminRole = await decryptString(session.split('|')[1]);
+    } catch (_) {
+      return new Response('', { status: 302, headers: { 'Location': '/login' } });
+    }
+    if (adminRole !== 'admin') {
+      return new Response('Forbidden — admin access required', { status: 403, headers: { 'Content-Type': 'text/plain' } });
+    }
+
+    if (path === '/admin' && request.method === 'GET') {
+      const page = admin_html.replace('window.CURRENT_USER', JSON.stringify(adminEmail));
+      return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+
+    if (path === '/admin/api/users' && request.method === 'GET') {
+      const list = await ENV.list();
+      const users = [];
+      for (const k of list.keys) {
+        if (k.name.endsWith('_session') || k.name.endsWith('_ip')) continue;
+        const value = await ENV.get(k.name);
+        let role;
+        if (value === 'admin' || value === 'customer') role = value;
+        else role = 'legacy';
+        users.push({ email: k.name, role });
+      }
+      return new Response(JSON.stringify(users), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === '/admin/api/users' && request.method === 'POST') {
+      const body = await request.json();
+      const email = (body.email || '').trim().toLowerCase();
+      const role = body.role;
+      if (!email || !email.includes('@')) {
+        return new Response(JSON.stringify({ ok: false, message: 'Valid email required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (role !== 'admin' && role !== 'customer') {
+        return new Response(JSON.stringify({ ok: false, message: 'Role must be admin or customer' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      await ENV.put(email, role);
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === '/admin/api/users' && request.method === 'DELETE') {
+      const body = await request.json();
+      const email = (body.email || '').trim().toLowerCase();
+      if (!email) {
+        return new Response(JSON.stringify({ ok: false, message: 'Email required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (email === adminEmail) {
+        return new Response(JSON.stringify({ ok: false, message: 'Cannot remove yourself' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      }
+      await ENV.delete(email);
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    return new Response('Not found', { status: 404 });
   } else if (path == '/') {
     return new Response(homepage, {
       status: 200,
