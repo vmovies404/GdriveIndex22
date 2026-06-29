@@ -6,28 +6,28 @@
 /* ── CSS Custom Properties ─────────────────────────────────── */
 :root,
 [data-bs-theme="light"] {
-  --gdi-bg:           oklch(97.5% 0.006 252);
+  --gdi-bg:           oklch(97.5% 0.008 172);
   --gdi-surface:      oklch(100% 0 0);
-  --gdi-surface-2:    oklch(96% 0.008 252);
-  --gdi-border:       oklch(89% 0.014 252);
-  --gdi-border-faint: oklch(93.5% 0.009 252);
-  --gdi-text:         oklch(18% 0.016 255);
-  --gdi-text-muted:   oklch(48% 0.022 255);
-  --gdi-text-xmuted:  oklch(68% 0.016 255);
-  --gdi-accent:       oklch(52% 0.235 258);
-  --gdi-accent-hover: oklch(44% 0.235 258);
-  --gdi-accent-soft:  oklch(96.5% 0.044 258);
-  --gdi-folder:       oklch(68% 0.185 65);
-  --gdi-nav-bg:       oklch(100% 0 0);
-  --gdi-nav-text:     oklch(18% 0.016 255);
-  --gdi-nav-hover:    oklch(94.5% 0.013 252);
-  --gdi-nav-border:   oklch(89% 0.014 252);
-  --gdi-row-hover:    oklch(97% 0.042 258);
-  --gdi-shadow-xs:    0 1px 2px oklch(18% 0.01 255 / 0.06);
-  --gdi-shadow:       0 1px 3px oklch(18% 0.01 255 / 0.08);
-  --gdi-shadow-md:    0 4px 20px oklch(18% 0.01 255 / 0.10);
-  --gdi-radius:       10px;
-  --gdi-radius-sm:    6px;
+  --gdi-surface-2:    oklch(96% 0.010 172);
+  --gdi-border:       oklch(88% 0.018 172);
+  --gdi-border-faint: oklch(93% 0.010 172);
+  --gdi-text:         oklch(15% 0.018 172);
+  --gdi-text-muted:   oklch(44% 0.022 172);
+  --gdi-text-xmuted:  oklch(64% 0.016 172);
+  --gdi-accent:       oklch(58% 0.185 186);  /* teal #00A8A5 */
+  --gdi-accent-hover: oklch(50% 0.185 186);
+  --gdi-accent-soft:  oklch(94% 0.055 186);
+  --gdi-folder:       oklch(58% 0.185 186);
+  --gdi-nav-bg:       oklch(100% 0 0 / 0.90);
+  --gdi-nav-text:     oklch(15% 0.018 172);
+  --gdi-nav-hover:    oklch(92% 0.022 172);
+  --gdi-nav-border:   oklch(88% 0.018 172);
+  --gdi-row-hover:    oklch(95% 0.040 186);
+  --gdi-shadow-xs:    0 1px 2px oklch(15% 0.01 172 / 0.06);
+  --gdi-shadow:       0 1px 3px oklch(15% 0.01 172 / 0.08);
+  --gdi-shadow-md:    0 4px 20px oklch(15% 0.01 172 / 0.10);
+  --gdi-radius:       12px;
+  --gdi-radius-sm:    8px;
   --gdi-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --gdi-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
   /* Bootstrap variable overrides */
@@ -46,26 +46,26 @@
 }
 
 [data-bs-theme="dark"] {
-  --gdi-bg:           oklch(13% 0.013 255);
-  --gdi-surface:      oklch(17.5% 0.015 255);
-  --gdi-surface-2:    oklch(21.5% 0.015 255);
-  --gdi-border:       oklch(28% 0.018 255);
-  --gdi-border-faint: oklch(22% 0.013 255);
-  --gdi-text:         oklch(88% 0.012 255);
-  --gdi-text-muted:   oklch(58% 0.019 255);
-  --gdi-text-xmuted:  oklch(40% 0.013 255);
-  --gdi-accent:       oklch(62% 0.22 258);
-  --gdi-accent-hover: oklch(68% 0.22 258);
-  --gdi-accent-soft:  oklch(22% 0.075 258);
-  --gdi-folder:       oklch(72% 0.175 65);
-  --gdi-nav-bg:       oklch(11% 0.015 255);
-  --gdi-nav-text:     oklch(85% 0.012 255);
-  --gdi-nav-hover:    oklch(100% 0 0 / 0.08);
-  --gdi-nav-border:   oklch(28% 0.018 255);
-  --gdi-row-hover:    oklch(22.5% 0.06 258);
-  --gdi-shadow-xs:    0 1px 3px oklch(0% 0 0 / 0.35);
-  --gdi-shadow:       0 1px 5px oklch(0% 0 0 / 0.45);
-  --gdi-shadow-md:    0 4px 18px oklch(0% 0 0 / 0.45);
+  --gdi-bg:           oklch(12% 0.020 172);  /* deep teal-black */
+  --gdi-surface:      oklch(16% 0.022 172);
+  --gdi-surface-2:    oklch(20% 0.022 172);
+  --gdi-border:       oklch(28% 0.028 172);
+  --gdi-border-faint: oklch(21% 0.020 172);
+  --gdi-text:         oklch(90% 0.010 172);
+  --gdi-text-muted:   oklch(58% 0.018 172);
+  --gdi-text-xmuted:  oklch(40% 0.012 172);
+  --gdi-accent:       oklch(72% 0.175 186);  /* cyan #00CFCC */
+  --gdi-accent-hover: oklch(80% 0.175 186);
+  --gdi-accent-soft:  oklch(22% 0.070 186);
+  --gdi-folder:       oklch(72% 0.175 186);
+  --gdi-nav-bg:       oklch(10% 0.022 172 / 0.85);
+  --gdi-nav-text:     oklch(88% 0.010 172);
+  --gdi-nav-hover:    oklch(100% 0 0 / 0.07);
+  --gdi-nav-border:   oklch(28% 0.028 172);
+  --gdi-row-hover:    oklch(20% 0.045 186);
+  --gdi-shadow-xs:    0 1px 3px oklch(0% 0 0 / 0.40);
+  --gdi-shadow:       0 1px 5px oklch(0% 0 0 / 0.50);
+  --gdi-shadow-md:    0 4px 20px oklch(0% 0 0 / 0.50);
   /* Bootstrap overrides */
   --bs-body-bg:           var(--gdi-bg);
   --bs-body-color:        var(--gdi-text);
@@ -115,6 +115,8 @@ a:hover { color: var(--gdi-accent-hover); }
   box-shadow: 0 1px 0 var(--gdi-nav-border);
   display: flex;
   align-items: center;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
 .gdi-nav-inner {
@@ -140,9 +142,9 @@ a:hover { color: var(--gdi-accent-hover); }
   letter-spacing: -.01em;
 }
 .gdi-logo:hover { opacity: .88; }
-.gdi-logo img   { height: 30px; width: auto; }
-/* Logo is white SVG — invert to black on white nav in light mode */
-[data-bs-theme="light"] .gdi-nav .gdi-logo img { filter: brightness(0); opacity: 0.82; }
+.gdi-logo img   { height: 32px; width: auto; object-fit: contain; }
+/* Elevate Digital logo — keep natural rendering in both modes */
+[data-bs-theme="light"] .gdi-nav .gdi-logo img { filter: none; opacity: 0.95; }
 
 .gdi-nav-sep {
   width: 1px;
@@ -905,21 +907,22 @@ a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 28px 16px 22px;
+  padding: 32px 18px 24px;
   background: var(--gdi-surface);
   border: 1px solid var(--gdi-border);
-  border-radius: var(--gdi-radius);
+  border-radius: 20px;
   box-shadow: var(--gdi-shadow-xs);
   text-decoration: none;
   color: var(--gdi-text);
   text-align: center;
-  transition: box-shadow .18s, border-color .18s, transform .18s;
+  transition: box-shadow .22s, border-color .22s, transform .22s, background .22s;
 }
 .gdi-drive-card:hover {
-  box-shadow: var(--gdi-shadow-md);
+  box-shadow: 0 8px 28px oklch(72% 0.175 186 / 0.18), var(--gdi-shadow-md);
   border-color: var(--gdi-accent);
   color: var(--gdi-text);
-  transform: translateY(-3px);
+  transform: translateY(-6px) scale(1.02);
+  background: var(--gdi-surface-2);
 }
 .gdi-drive-card:active { transform: translateY(-1px); }
 .gdi-drive-card-icon { font-size: 40px; color: var(--gdi-folder); line-height: 1; }
@@ -956,8 +959,9 @@ a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
   box-shadow: var(--gdi-shadow-md);
 }
 .gdi-login-header { text-align: center; margin-bottom: 28px; }
-.gdi-login-logo { max-height: 40px; max-width: 200px; width: auto; height: auto; margin-bottom: 14px; }
-[data-bs-theme="light"] .gdi-login-logo { filter: invert(1); }
+.gdi-login-logo { max-height: 56px; max-width: 220px; width: auto; height: auto; margin-bottom: 16px; border-radius: 8px; }
+/* Elevate Digital logo naturally suits dark bg — no filter needed */
+[data-bs-theme="light"] .gdi-login-logo { filter: none; }
 .gdi-login-title { font-size: 20px; font-weight: 700; color: var(--gdi-text); margin: 0 0 4px; }
 .gdi-login-subtitle { font-size: 13px; color: var(--gdi-text-muted); margin: 0; }
 .gdi-field { margin-bottom: 16px; }
@@ -1029,9 +1033,9 @@ body.embed-mode .gdi-footer,
 body.embed-mode #gdi-toast-container { display: none !important; }
 body.embed-mode #content { padding-top: 0 !important; }
 
-/* Dark mode: extra depth shadow on nav */
+/* Dark mode: extra depth + subtle teal tint shadow on nav */
 [data-bs-theme="dark"] .gdi-nav {
-  box-shadow: 0 1px 0 var(--gdi-nav-border), 0 2px 8px oklch(0% 0 0 / 0.30);
+  box-shadow: 0 1px 0 var(--gdi-nav-border), 0 2px 12px oklch(0% 0 0 / 0.40), 0 0 0 0.5px oklch(72% 0.175 186 / 0.08);
 }
 
 /* ── Theme toggle icon ─────────────────────────────────────── */

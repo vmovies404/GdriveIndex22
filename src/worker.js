@@ -15,7 +15,7 @@ const blocked_region = ['']; // add regional codes seperated by comma, eg. ['IN'
 const blocked_asn = []; // add ASN numbers from http://www.bgplookingglass.com/list-of-autonomous-system-numbers, eg. [16509, 12345]
 const CDN_VERSION = '2.5.9'; // auto-updated by npm run build
 const authConfig = {
-  "siteName": "GDI Test", // Website name
+  "siteName": "Elevate Drive Index", // Website name
   "client_id": "YOUR_CLIENT_ID", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
   "client_secret": "YOUR_CLIENT_SECRET", // Client Secret from Google Cloud Console (sentinel: real value via KV secret CLIENT_SECRET)
   "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
@@ -107,7 +107,7 @@ const uiConfig = {
   "logo_width": "100px", // only if logo_image is true
   "favicon": 'https://cdn.jsdelivr.net/npm/@googledrive/index@' + CDN_VERSION + '/images/favicon.ico',
   // if logo is true then link otherwise just text for name
-  "logo_link_name": 'https://cdn.jsdelivr.net/npm/@googledrive/index@' + CDN_VERSION + '/images/bhadoo-cloud-logo-white.svg',
+  "logo_link_name": 'https://cdn.jsdelivr.net/gh/sisisabia58/GdriveIndex22@improvement/images/logo.jpeg',
   "fixed_header": true, // If you want the footer to be flexible or fixed.
   "header_padding": "80", // Value 80 for fixed header, Value 20 for flexible header. Required to be changed accordingly in some themes.
   "nav_link_1": "Home", // change navigation link name
@@ -159,7 +159,7 @@ const player_config = {
 // DON'T TOUCH BELOW THIS UNLESS YOU KNOW WHAT YOU'RE DOING
 const gds = [];
 const drive_list = authConfig.roots.map(it => it.id);
-const cdn_base = 'https://cdn.jsdelivr.net/npm/@googledrive/index@' + CDN_VERSION;
+const cdn_base = 'https://cdn.jsdelivr.net/gh/sisisabia58/GdriveIndex22@improvement';
 const dev_mode = environment !== 'production';
 let app_js_file;
 if (environment === 'local') {
@@ -187,6 +187,9 @@ function html(current_drive_order = 0, model = {}) {
   <meta name="robots" content="noindex" />
   <link rel="icon" href="${uiConfig.favicon}">
   <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('gdi-theme')||'dark')}catch(_){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="${css_file}">
@@ -221,6 +224,9 @@ const homepage = `<!DOCTYPE html>
   <meta name="robots" content="noindex">
   <link rel="icon" href="${uiConfig.favicon}">
   <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('gdi-theme')||'dark')}catch(_){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="${css_file}">
@@ -290,12 +296,15 @@ const login_html = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <link rel="icon" href="${uiConfig.favicon}">
   <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('gdi-theme')||'dark')}catch(_){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="${css_file}">
   <style>
     body {
-      background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0f172a 100%) !important;
+      background: radial-gradient(ellipse at 30% 20%, #0a3d35 0%, #051f1a 55%, #020d0b 100%) !important;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -329,8 +338,8 @@ const login_html = `<!DOCTYPE html>
       left: -10%;
       width: 120%;
       height: 120%;
-      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 50%),
-                  radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.05), transparent 50%);
+      background: radial-gradient(circle at top right, rgba(0, 207, 204, 0.12), transparent 50%),
+                  radial-gradient(circle at bottom left, rgba(0, 160, 140, 0.06), transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
@@ -385,7 +394,7 @@ const login_html = `<!DOCTYPE html>
     }
     .gdi-btn-google:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25) !important;
+      box-shadow: 0 8px 20px rgba(0, 207, 204, 0.25) !important;
       background: #f8fafc !important;
     }
     .gdi-btn-google:active {
@@ -398,7 +407,7 @@ const login_html = `<!DOCTYPE html>
       letter-spacing: 0.02em;
     }
     [data-bs-theme="light"] body {
-      background: radial-gradient(circle at 50% 50%, #f0fdf4 0%, #f8fafc 100%) !important;
+      background: radial-gradient(ellipse at 30% 20%, #e0f7f5 0%, #f0fdfb 55%, #f8fffe 100%) !important;
     }
     [data-bs-theme="light"] .gdi-login-card {
       background: rgba(255, 255, 255, 0.75) !important;
@@ -417,7 +426,7 @@ const login_html = `<!DOCTYPE html>
       color: #94a3b8 !important;
     }
     [data-bs-theme="light"] .gdi-login-logo {
-      filter: none;
+      filter: none; /* Elevate logo has its own dark bg — render as-is */
     }
   </style>
 </head>
@@ -463,10 +472,13 @@ const admin_html = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — ${authConfig.siteName}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
-    body { background: #0d1117; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+    body { background: #0d1117; color: #e2e8f0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
     .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
     h1 { font-size: 24px; margin-bottom: 4px; }
     .subtitle { color: #8b9ab0; font-size: 13px; margin-bottom: 24px; }
