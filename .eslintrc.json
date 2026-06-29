@@ -13,6 +13,7 @@
   },
   "globals": {
     "ENV": "readonly",
+    "DB": "readonly",
     "crypto": "readonly",
     "fetch": "readonly",
     "Request": "readonly",

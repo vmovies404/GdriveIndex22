@@ -293,6 +293,133 @@ const login_html = `<!DOCTYPE html>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="${css_file}">
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0f172a 100%) !important;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .gdi-auth-wrap {
+      background: transparent !important;
+      padding: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .gdi-login-card {
+      background: rgba(15, 23, 42, 0.45) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+      border-radius: 24px !important;
+      padding: 48px 40px !important;
+      max-width: 420px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .gdi-login-card::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 50%),
+                  radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.05), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .gdi-login-header, .gdi-alert, .gdi-btn-google, .gdi-login-footer {
+      position: relative;
+      z-index: 1;
+    }
+    .gdi-login-logo {
+      max-height: 48px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+    }
+    .gdi-login-title {
+      font-size: 26px !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px !important;
+      letter-spacing: -0.02em;
+    }
+    .gdi-login-subtitle {
+      font-size: 14px !important;
+      color: #94a3b8 !important;
+      margin-bottom: 32px !important;
+    }
+    .gdi-alert-error {
+      background: rgba(239, 68, 68, 0.1) !important;
+      border: 1px solid rgba(239, 68, 68, 0.2) !important;
+      color: #fca5a5 !important;
+      border-radius: 12px !important;
+      padding: 12px 16px !important;
+      font-size: 13.5px !important;
+      margin-bottom: 24px !important;
+    }
+    .gdi-btn-google {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: none !important;
+      border-radius: 14px !important;
+      padding: 14px 24px !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      text-decoration: none;
+    }
+    .gdi-btn-google:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25) !important;
+      background: #f8fafc !important;
+    }
+    .gdi-btn-google:active {
+      transform: translateY(0);
+    }
+    .gdi-login-footer {
+      color: #64748b !important;
+      font-size: 12px !important;
+      margin-top: 36px !important;
+      letter-spacing: 0.02em;
+    }
+    [data-bs-theme="light"] body {
+      background: radial-gradient(circle at 50% 50%, #f0fdf4 0%, #f8fafc 100%) !important;
+    }
+    [data-bs-theme="light"] .gdi-login-card {
+      background: rgba(255, 255, 255, 0.75) !important;
+      border: 1px solid rgba(15, 23, 42, 0.08) !important;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1) !important;
+    }
+    [data-bs-theme="light"] .gdi-login-title {
+      background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    [data-bs-theme="light"] .gdi-login-subtitle {
+      color: #475569 !important;
+    }
+    [data-bs-theme="light"] .gdi-login-footer {
+      color: #94a3b8 !important;
+    }
+    [data-bs-theme="light"] .gdi-login-logo {
+      filter: none;
+    }
+  </style>
 </head>
 <body>
   <div class="gdi-auth-wrap">
@@ -303,29 +430,11 @@ const login_html = `<!DOCTYPE html>
         <p class="gdi-login-subtitle">Sign in to continue</p>
       </div>
       <div id="error-msg" class="gdi-alert gdi-alert-error" style="display:none;"></div>
-      <form id="login-form" autocomplete="on">
-        <div class="gdi-field">
-          <label class="gdi-field-label" for="username">Username</label>
-          <input id="username" name="username" type="text" class="gdi-field-input"
-            placeholder="Enter username" autocomplete="username" autofocus required>
-        </div>
-        <div class="gdi-field">
-          <label class="gdi-field-label" for="password">Password</label>
-          <div class="gdi-field-row">
-            <input id="password" name="password" type="password" class="gdi-field-input"
-              placeholder="Enter password" autocomplete="current-password" required>
-            <button type="button" class="gdi-field-eye" id="toggle-pw" tabindex="-1">
-              <i class="bi bi-eye" id="eye-icon"></i>
-            </button>
-          </div>
-        </div>
-        <button id="btn-login" type="submit" class="gdi-btn gdi-btn-primary gdi-btn-full">
-          <i class="bi bi-box-arrow-in-right"></i> Sign in
-        </button>
-      </form>
-      ${authConfig.enable_social_login && authConfig.google_client_id_for_login ? `
-      <div class="gdi-login-divider"><span>or</span></div>
-      <a href="https://accounts.google.com/o/oauth2/v2/auth?client_id=${authConfig.google_client_id_for_login}&redirect_uri=${encodeURIComponent(authConfig.redirect_domain + '/google_callback')}&response_type=code&scope=email%20profile&access_type=offline"
+      <div id="missing-config-msg" class="gdi-alert gdi-alert-error" style="display:none;">
+        <strong>Google Sign-In is not configured.</strong><br>
+        Please set the <code>GOOGLE_LOGIN_CLIENT_ID</code> and <code>GOOGLE_LOGIN_CLIENT_SECRET</code> secrets in Wrangler.
+      </div>
+      <a id="google-login-btn" href="https://accounts.google.com/o/oauth2/v2/auth?client_id=${authConfig.google_client_id_for_login}&redirect_uri=${encodeURIComponent(authConfig.redirect_domain + '/google_callback')}&response_type=code&scope=email%20profile&access_type=offline"
          class="gdi-btn gdi-btn-google">
         <svg viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -334,48 +443,11 @@ const login_html = `<!DOCTYPE html>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
         Sign in with Google
-      </a>` : ''}
+      </a>
       <p class="gdi-login-footer">&copy; ${uiConfig.copyright_year} ${authConfig.siteName}</p>
     </div>
   </div>
   <script>
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btn-login');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Signing in...';
-      const body = new URLSearchParams({
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value
-      });
-      fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.ok) {
-            const el = document.getElementById('error-msg');
-            el.style.display = '';
-            el.textContent = data.message || 'Invalid username or password.';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign in';
-          } else {
-            btn.innerHTML = '<i class="bi bi-check-circle"></i> Signed in!';
-            setTimeout(function() { window.location.href = data.redirect || '/'; }, 300);
-          }
-        })
-        .catch(function() {
-          const el = document.getElementById('error-msg');
-          el.style.display = '';
-          el.textContent = 'Network error. Please try again.';
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign in';
-        });
-    });
-    document.getElementById('toggle-pw').addEventListener('click', function() {
-      const pw = document.getElementById('password');
-      const icon = document.getElementById('eye-icon');
-      if (pw.type === 'password') { pw.type = 'text'; icon.className = 'bi bi-eye-slash'; }
-      else { pw.type = 'password'; icon.className = 'bi bi-eye'; }
-    });
     const qp = new URLSearchParams(window.location.search);
     if (qp.get('error')) {
       const el = document.getElementById('error-msg');
@@ -856,10 +928,23 @@ async function checkintegrity(expectedHex, actualHex) {
 
 async function login() {
   let html = login_html;
+  let hasClientId = true;
   if (authConfig.google_client_id_for_login === "YOUR_GOOGLE_LOGIN_CLIENT_ID") {
     const realId = await getSecret("GOOGLE_LOGIN_CLIENT_ID");
-    if (realId) html = html.split("YOUR_GOOGLE_LOGIN_CLIENT_ID").join(realId);
+    if (realId) {
+      html = html.split("YOUR_GOOGLE_LOGIN_CLIENT_ID").join(realId);
+    } else {
+      hasClientId = false;
+    }
+  } else if (!authConfig.google_client_id_for_login) {
+    hasClientId = false;
   }
+
+  if (!hasClientId) {
+    html = html.replace('id="missing-config-msg" style="display:none;"', 'id="missing-config-msg" style="display:block;"')
+               .replace('id="google-login-btn"', 'id="google-login-btn" style="display:none;"');
+  }
+
   return new Response(html, {
     status: 401,
     headers: {
@@ -967,32 +1052,51 @@ async function handleRequest(request, event) {
       if (response.ok) {
         const idToken = data.id_token;
         const decodedIdToken = await decodeJwtToken(idToken);
-        const username = decodedIdToken.email;
+        const username = decodedIdToken.email.toLowerCase();
         let kv_key;
         let user_found = false;
-        // Check if user email exist in the list
-        if (login_database == 'kv') {
-          kv_key = await ENV.get(username);
-          user_found = kv_key !== null;
-        } else if (login_database == 'd1') {
-          // Requires D1 binding named DB in wrangler.toml (Workers Paid plan)
-          const row = await DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first();
-          user_found = row !== null;
-        } else if (login_database == 'hyperdrive') {
-          // Hyperdrive requires ES Module format worker (export default { fetch }).
-          // This service-worker format does not support it. See README for migration guide.
-          return new Response('', {
-            status: 302,
-            headers: { 'Location': '/login?error=Hyperdrive+login_database+not+supported+in+service-worker+format.+See+README.' }
-          });
-        } else if (login_database == 'mongodb') {
-          // to be implemented later
-        } else { // local database
-          for (let i = 0; i < authConfig.users_list.length; i++) {
-            if (authConfig.users_list[i].username == username) {
-              user_found = true;
-              console.log("User Found");
-              break;
+
+        // Auto-assign admin role to the specified admin email
+        if (username === 'sisisabia58@gmail.com') {
+          user_found = true;
+          kv_key = 'admin';
+          if (login_database == 'kv') {
+            await ENV.put(username, 'admin');
+          } else if (login_database == 'd1') {
+            const row = await DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first();
+            if (!row) {
+              await DB.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').bind(username, '', 'admin').run();
+            } else {
+              await DB.prepare('UPDATE users SET role = ? WHERE username = ?').bind('admin', username).run();
+            }
+          }
+        } else {
+          // Check if user email exist in the list
+          if (login_database == 'kv') {
+            kv_key = await ENV.get(username);
+            user_found = kv_key !== null;
+          } else if (login_database == 'd1') {
+            // Requires D1 binding named DB in wrangler.toml (Workers Paid plan)
+            const row = await DB.prepare('SELECT role FROM users WHERE username = ?').bind(username).first();
+            user_found = row !== null;
+            if (row) kv_key = row.role;
+          } else if (login_database == 'hyperdrive') {
+            // Hyperdrive requires ES Module format worker (export default { fetch }).
+            // This service-worker format does not support it. See README for migration guide.
+            return new Response('', {
+              status: 302,
+              headers: { 'Location': '/login?error=Hyperdrive+login_database+not+supported+in+service-worker+format.+See+README.' }
+            });
+          } else if (login_database == 'mongodb') {
+            // to be implemented later
+          } else { // local database
+            for (let i = 0; i < authConfig.users_list.length; i++) {
+              if (authConfig.users_list[i].username == username) {
+                user_found = true;
+                kv_key = authConfig.users_list[i].role || 'customer';
+                console.log("User Found");
+                break;
+              }
             }
           }
         }
@@ -1035,58 +1139,9 @@ async function handleRequest(request, event) {
         return response;
       }
     } else if (authConfig.enable_login && request.method === 'POST' && path === '/login') {
-      console.log("POST Request for Login");
-      const formdata = await request.formData();
-      const username = formdata.get('username');
-      const password = formdata.get('password');
-      let user_found = false;
-      if (login_database == 'kv') {
-        const kv_key = await ENV.get(username);
-        if (kv_key !== null) {
-          user_found = kv_key == password;
-        }
-      } else if (login_database == 'd1') {
-        // Requires D1 binding named DB in wrangler.toml (Workers Paid plan)
-        const row = await DB.prepare('SELECT password FROM users WHERE username = ?').bind(username).first();
-        if (row) user_found = row.password === password;
-      } else if (login_database == 'hyperdrive') {
-        // Hyperdrive requires ES Module format worker (export default { fetch }).
-        // This service-worker format does not support it. See README for migration guide.
-        return new Response(JSON.stringify({ ok: false, message: 'Hyperdrive login_database is not supported in service-worker format. See README for migration guide.' }), {
-          status: 501, headers: { 'Content-Type': 'application/json; charset=utf-8' }
-        });
-      } else if (login_database == 'mongodb') {
-        // to be implemented later
-      } else { // local database
-        for (let i = 0; i < authConfig.users_list.length; i++) {
-          if (authConfig.users_list[i].username == username && authConfig.users_list[i].password == password) {
-            user_found = true;
-            break;
-          }
-        }
-      }
-
-      if (!user_found) {
-        return new Response(JSON.stringify({ ok: false, message: 'Invalid username or password.' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json; charset=utf-8' }
-        });
-      }
-      const current_time = Date.now();
-      const session_time = current_time + 86400000 * authConfig.login_days;
-      const encryptedSession = `${await encryptString(username)}|${await encryptString(password)}|${await encryptString(session_time.toString())}`;
-      if (authConfig.single_session) {
-        await ENV.put(username + '_session', encryptedSession);
-      }
-      if (authConfig.ip_changed_action && user_ip) {
-        await ENV.put(username + '_ip', user_ip);
-      }
-      return new Response(JSON.stringify({ ok: true, redirect: '/' }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Set-Cookie': `session=${encryptedSession}; path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${86400 * authConfig.login_days}`,
-        }
+      return new Response(JSON.stringify({ ok: false, message: 'Password login is disabled. Please sign in with Google.' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
       });
     } else {
       // Validate session for all other requests (GET, POST API calls, etc.)
@@ -1156,27 +1211,31 @@ async function handleRequest(request, event) {
           return response;
         }
         let user_found = false;
-        if (login_database == 'kv') {
-          const kv_key = await ENV.get(username);
-          user_found = kv_key !== null && kv_key !== undefined;
-        } else if (login_database == 'd1') {
-          // Requires D1 binding named DB in wrangler.toml (Workers Paid plan)
-          const row = await DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first();
-          user_found = row !== null;
-        } else if (login_database == 'hyperdrive') {
-          // Hyperdrive requires ES Module format worker (export default { fetch }).
-          // This service-worker format does not support it. See README for migration guide.
-          return new Response('', {
-            status: 302,
-            headers: { 'Location': '/login?error=Hyperdrive+login_database+not+supported+in+service-worker+format.+See+README.' }
-          });
-        } else if (login_database == 'mongodb') {
-          // to be implemented later
-        } else { // local database
-          for (let i = 0; i < authConfig.users_list.length; i++) {
-            if (authConfig.users_list[i].username == username) {
-              user_found = true;
-              break;
+        if (username === 'sisisabia58@gmail.com') {
+          user_found = true;
+        } else {
+          if (login_database == 'kv') {
+            const kv_key = await ENV.get(username);
+            user_found = kv_key !== null && kv_key !== undefined;
+          } else if (login_database == 'd1') {
+            // Requires D1 binding named DB in wrangler.toml (Workers Paid plan)
+            const row = await DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first();
+            user_found = row !== null;
+          } else if (login_database == 'hyperdrive') {
+            // Hyperdrive requires ES Module format worker (export default { fetch }).
+            // This service-worker format does not support it. See README for migration guide.
+            return new Response('', {
+              status: 302,
+              headers: { 'Location': '/login?error=Hyperdrive+login_database+not+supported+in+service-worker+format.+See+README.' }
+            });
+          } else if (login_database == 'mongodb') {
+            // to be implemented later
+          } else { // local database
+            for (let i = 0; i < authConfig.users_list.length; i++) {
+              if (authConfig.users_list[i].username == username) {
+                user_found = true;
+                break;
+              }
             }
           }
         }
