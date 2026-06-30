@@ -1,9 +1,225 @@
-const len = window.drive_names.length;
-let html = '';
-for (let i = 0; i < len; i++) {
-  html += `<a href="/${i}:/" class="gdi-drive-card">
-    <span class="gdi-drive-card-icon"><i class="bi bi-folder-fill"></i></span>
-    <span class="gdi-drive-card-name">${window.drive_names[i]}</span>
-  </a>`;
-}
-$('#list').html(html);
+/**
+ * homepage.js — Unified merged root-level file list
+ * Fetches ALL pages from every configured drive, merges them into one
+ * alphabetically-sorted list (folders first), and renders it with
+ * standard gdi-row styling plus client-side pagination (25 items/page).
+ */
+(function () {
+  const PAGE_SIZE = 25;
+  var _allItems   = [];   // full merged+sorted dataset
+  var _filtered   = [];   // subset after filter input
+  var _page       = 1;    // current page index
+
+  var names = window.drive_names || [];
+  var UI    = window.UI    || {};
+
+  // ── Fetch all pages from one drive ─────────────────────────────────────────
+  function fetchAllFromDrive(driveIdx) {
+    var items     = [];
+    var pageToken = '';
+    var pageIndex = 0;
+    var path      = '/' + driveIdx + ':/';
+
+    function next() {
+      return fetch(path, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          id:         '',
+          type:       'folder',
+          password:   '',
+          page_token: pageToken,
+          page_index: pageIndex
+        })
+      })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (res) {
+        if (!res || !res.data || !res.data.files) return items;
+        res.data.files.forEach(function (f) { f._driveIdx = driveIdx; });
+        items = items.concat(res.data.files);
+        if (res.nextPageToken) {
+          pageToken = res.nextPageToken;
+          pageIndex++;
+          return next();
+        }
+        return items;
+      })
+      .catch(function () { return items; });
+    }
+
+    return next();
+  }
+
+  // ── HTML-escape helper ──────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#x27;');
+  }
+
+  // ── File-size formatter ─────────────────────────────────────────────────────
+  function fmtSize(bytes) {
+    if (!bytes) return '';
+    var n = Number(bytes);
+    if (n < 1024)        return n + ' B';
+    if (n < 1048576)     return (n / 1024).toFixed(1)       + ' KB';
+    if (n < 1073741824)  return (n / 1048576).toFixed(1)    + ' MB';
+    return                      (n / 1073741824).toFixed(2)  + ' GB';
+  }
+
+  // ── File-type icon ──────────────────────────────────────────────────────────
+  var VIDEO   = ['mp4','webm','avi','mpg','mpeg','mkv','rm','rmvb','mov','wmv','asf','ts','flv','3gp','m4v'];
+  var AUDIO   = ['mp3','flac','wav','ogg','m4a','aac','wma','alac'];
+  var IMAGE   = ['bmp','jpg','jpeg','png','gif','svg','tiff','ico'];
+  var ARCHIVE = ['zip','rar','tar','7z','gz'];
+  var CODE    = ['php','css','go','java','js','json','txt','sh','html','xml','py','rb','c','cpp','h','hpp'];
+
+  function getIcon(ext) {
+    var e = (ext || '').toLowerCase();
+    if (VIDEO.indexOf(e)   > -1) return '<i class="bi bi-camera-video-fill gdi-icon-video"></i>';
+    if (AUDIO.indexOf(e)   > -1) return '<i class="bi bi-music-note-beamed gdi-icon-audio"></i>';
+    if (IMAGE.indexOf(e)   > -1) return '<i class="bi bi-image gdi-icon-image"></i>';
+    if (ARCHIVE.indexOf(e) > -1) return '<i class="bi bi-file-earmark-zip-fill gdi-icon-archive"></i>';
+    if (e === 'md')              return '<i class="bi bi-markdown-fill gdi-icon-md"></i>';
+    if (e === 'pdf')             return '<i class="bi bi-file-earmark-pdf-fill gdi-icon-pdf"></i>';
+    if (CODE.indexOf(e)    > -1) return '<i class="bi bi-code-slash gdi-icon-code"></i>';
+    return '<i class="bi bi-file-earmark gdi-icon-file"></i>';
+  }
+
+  // ── Render one page of rows into #list ──────────────────────────────────────
+  function renderPage(items, page) {
+    var listEl   = document.getElementById('list');
+    var spinEl   = document.getElementById('spinner');
+    if (spinEl) spinEl.remove();
+
+    var start = (page - 1) * PAGE_SIZE;
+    var slice = items.slice(start, start + PAGE_SIZE);
+
+    if (!slice.length) {
+      listEl.innerHTML = '<div class="gdi-empty"><i class="bi bi-search"></i><p>No items found.</p></div>';
+      return;
+    }
+
+    var html = '';
+    slice.forEach(function (item) {
+      var idx  = item._driveIdx;
+      var enc  = encodeURIComponent(item.name).replace(/#/g, '%23').replace(/\?/g, '%3F');
+      var name = esc(item.name);
+
+      if (item.mimeType === 'application/vnd.google-apps.folder') {
+        html +=
+          '<a href="/' + idx + ':/' + enc + '/" class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
+            '<span class="gdi-row-icon"><i class="bi bi-folder-fill gdi-icon-folder"></i></span>' +
+            '<span class="gdi-row-name">' + name + '</span>' +
+            '<span class="gdi-row-size"></span>' +
+            '<span class="gdi-row-acts"></span>' +
+          '</a>';
+      } else {
+        var ext  = item.fileExtension || '';
+        var size = fmtSize(item.size);
+        var dl   = UI.second_domain_for_dl
+          ? UI.downloaddomain + (item.link || '')
+          : window.location.origin + (item.link || '');
+
+        html +=
+          '<div class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
+            '<span class="gdi-row-icon">' + getIcon(ext) + '</span>' +
+            '<a class="gdi-row-name" href="/' + idx + ':/' + enc + '?a=view" title="' + name + '">' + name + '</a>' +
+            '<span class="gdi-row-size">' + (UI.display_size ? size : '') + '</span>' +
+            '<span class="gdi-row-acts">' +
+              (UI.display_download && item.link
+                ? '<a class="gdi-act-btn" href="' + esc(dl) + '" title="Download"><i class="bi bi-download"></i></a>'
+                : '') +
+            '</span>' +
+          '</div>';
+      }
+    });
+
+    listEl.innerHTML = html;
+  }
+
+  // ── Update pagination controls & count bar ──────────────────────────────────
+  function updateControls(items, page) {
+    var total   = items.length;
+    var pages   = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    var pagEl   = document.getElementById('hp-pagination');
+    var infoEl  = document.getElementById('hp-page-info');
+    var prevBtn = document.getElementById('hp-prev');
+    var nextBtn = document.getElementById('hp-next');
+    var countEl = document.getElementById('count');
+
+    // Show pagination bar only when there is more than one page
+    if (pagEl)  pagEl.style.display  = total > PAGE_SIZE ? 'flex' : 'none';
+    if (infoEl) infoEl.textContent   = 'Page ' + page + ' of ' + pages + ' \u00b7 ' + total + ' item' + (total !== 1 ? 's' : '');
+    if (prevBtn) prevBtn.disabled    = page <= 1;
+    if (nextBtn) nextBtn.disabled    = page >= pages;
+
+    if (countEl) {
+      countEl.classList.add('show');
+      countEl.textContent = total + ' item' + (total !== 1 ? 's' : '');
+    }
+  }
+
+  // ── Navigate to a page ──────────────────────────────────────────────────────
+  function goToPage(page) {
+    _page = page;
+    renderPage(_filtered, page);
+    updateControls(_filtered, page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Main: fetch → merge → sort → display ───────────────────────────────────
+  Promise.all(names.map(function (_, i) { return fetchAllFromDrive(i); }))
+    .then(function (results) {
+      var merged = [].concat.apply([], results);
+
+      // Sort: folders first (A→Z), then files (A→Z)
+      merged.sort(function (a, b) {
+        var aF = a.mimeType === 'application/vnd.google-apps.folder';
+        var bF = b.mimeType === 'application/vnd.google-apps.folder';
+        if (aF !== bF) return aF ? -1 : 1;
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+
+      _allItems = merged;
+      _filtered = merged;
+
+      // Wire filter input
+      var filterEl = document.getElementById('folder-filter');
+      if (filterEl) {
+        filterEl.addEventListener('input', function () {
+          var q = this.value.toLowerCase().trim();
+          _filtered = q
+            ? _allItems.filter(function (it) { return it.name.toLowerCase().indexOf(q) > -1; })
+            : _allItems;
+          goToPage(1);
+        });
+      }
+
+      // Wire Prev / Next buttons
+      var prevBtn = document.getElementById('hp-prev');
+      var nextBtn = document.getElementById('hp-next');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function () {
+          if (_page > 1) goToPage(_page - 1);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+          if (_page < Math.ceil(_filtered.length / PAGE_SIZE)) goToPage(_page + 1);
+        });
+      }
+
+      goToPage(1);
+    })
+    .catch(function () {
+      var listEl = document.getElementById('list');
+      if (listEl) {
+        listEl.innerHTML =
+          '<div class="gdi-empty"><i class="bi bi-wifi-off"></i><p>Could not load files. Please try again.</p></div>';
+      }
+    });
+}());

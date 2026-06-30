@@ -260,11 +260,26 @@ const homepage = `<!DOCTYPE html>
 
   <div id="content" style="padding-top:54px;">
     <div class="gdi-wrap">
-      <div class="gdi-drives-header">${authConfig.siteName}</div>
-      <div id="list" class="gdi-drives-grid"></div>
-      <div id="count" style="display:none;"></div>
+      <div class="gdi-panel" style="margin-top:18px;">
+        <div class="gdi-toolbar">
+          <input id="folder-filter" class="gdi-filter-input" type="search" placeholder="Filter files…" autocomplete="off">
+        </div>
+        <div class="gdi-list-header">
+          <span class="gdi-col-name">Name</span>
+          <span class="gdi-col-size">Size</span>
+          <span class="gdi-col-acts"></span>
+        </div>
+        <div id="list"><div class="gdi-spinner-wrap" id="spinner"><div class="gdi-spinner"></div></div></div>
+        <div id="hp-pagination" style="display:none;padding:8px 12px;border-top:1px solid var(--gdi-border);background:var(--gdi-surface-2);align-items:center;justify-content:space-between;gap:8px;">
+          <button id="hp-prev" class="gdi-btn gdi-btn-ghost gdi-btn-icon" disabled><i class="bi bi-chevron-left"></i> Prev</button>
+          <span id="hp-page-info" style="font-size:12px;color:var(--gdi-text-muted);"></span>
+          <button id="hp-next" class="gdi-btn gdi-btn-ghost gdi-btn-icon">Next <i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div id="count" class="gdi-count-bar"></div>
+      </div>
     </div>
   </div>
+
 
   <footer class="gdi-footer"${uiConfig.hide_footer ? ' style="display:none;"' : ''}>
     ${uiConfig.credit ? `<span>Redesigned by <a href="https://www.npmjs.com/package/@googledrive/index" target="_blank">TheFirstSpeedster</a></span> &middot; ` : ''}
