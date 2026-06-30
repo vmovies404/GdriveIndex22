@@ -173,7 +173,7 @@ const player_config = {
 // DON'T TOUCH BELOW THIS UNLESS YOU KNOW WHAT YOU'RE DOING
 const gds = [];
 const drive_list = authConfig.roots.map(it => it.id);
-const cdn_base = 'https://cdn.jsdelivr.net/gh/sisisabia58/GdriveIndex22@dfc8987d61a41c55ac309a853e69e29b5364448e'; // pinned commit — update after each push
+const cdn_base = 'https://rawcdn.githack.com/sisisabia58/GdriveIndex22/dfc8987d61a41c55ac309a853e69e29b5364448e'; // githack fallback — jsDelivr SIN node down
 
 const dev_mode = environment !== 'production';
 let app_js_file;
