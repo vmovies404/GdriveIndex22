@@ -1,9 +1,8 @@
 /**
- * homepage.js — Unified merged file list (two-level deep)
- * 1. Fetches the root of each drive  →  finds the folders sitting there
- * 2. Fetches ONE level inside each of those root folders
- * 3. Merges everything, sorts (folders first A→Z, then files A→Z)
- * 4. Renders with gdi-row style + 25-items/page pagination + live filter
+ * homepage.js — Unified merged root-level file list
+ * Fetches the root content of every configured drive in parallel,
+ * merges into one list sorted (folders first A→Z, then files A→Z),
+ * and renders with gdi-row style + 25-items/page pagination + live filter.
  */
 (function () {
   var PAGE_SIZE = 25;
@@ -13,11 +12,12 @@
   var names     = window.drive_names || [];
   var UI        = window.UI          || {};
 
-  // ── Low-level: fetch one page batch from a given worker URL ────────────────
-  function fetchAllPagesFromUrl(urlPath) {
+  // ── Fetch all pages from the root of one drive ─────────────────────────────
+  function fetchAllFromDrive(driveIdx) {
     var items     = [];
     var pageToken = '';
     var pageIndex = 0;
+    var urlPath   = '/' + driveIdx + ':/';
 
     function next() {
       return fetch(urlPath, {
@@ -34,6 +34,7 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (res) {
         if (!res || !res.data || !res.data.files) return items;
+        res.data.files.forEach(function (f) { f._driveIdx = driveIdx; });
         items = items.concat(res.data.files);
         if (res.nextPageToken) {
           pageToken = res.nextPageToken;
@@ -46,56 +47,6 @@
     }
 
     return next();
-  }
-
-  // ── Per-drive: go one level deeper than the drive root ─────────────────────
-  //
-  // Structure that exists in prod:
-  //   /driveIdx:/          →  returns a folder e.g. "Drive 1"
-  //   /driveIdx:/Drive 1/  →  the actual files/folders we want to show
-  //
-  // We fetch the root first, collect every folder we find there, then fetch
-  // inside each of those folders.  Items are stamped with:
-  //   _driveIdx  — which drive they belong to
-  //   _urlBase   — the encoded parent path segment (e.g. "Drive%201/")
-  //                so we can build correct hrefs in renderPage
-  function fetchAllFromDrive(driveIdx) {
-    var rootUrl = '/' + driveIdx + ':/';
-
-    return fetchAllPagesFromUrl(rootUrl).then(function (rootItems) {
-      var rootFolders = rootItems.filter(function (item) {
-        return item.mimeType === 'application/vnd.google-apps.folder';
-      });
-
-      if (rootFolders.length === 0) {
-        // Drive root contains no folders — show root items directly
-        rootItems.forEach(function (f) {
-          f._driveIdx = driveIdx;
-          f._urlBase  = '';
-        });
-        return rootItems;
-      }
-
-      // For every folder at the root, dive one level deeper
-      var subFetches = rootFolders.map(function (folder) {
-        var encName    = encodeURIComponent(folder.name)
-                           .replace(/#/g, '%23')
-                           .replace(/\?/g, '%3F');
-        var folderUrl  = '/' + driveIdx + ':/' + encName + '/';
-
-        return fetchAllPagesFromUrl(folderUrl).then(function (items) {
-          items.forEach(function (f) {
-            f._driveIdx = driveIdx;
-            f._urlBase  = encName + '/';   // e.g. "Drive%201/"
-          });
-          return items;
-        }).catch(function () { return []; });
-      });
-
-      return Promise.all(subFetches).then(function (arrays) {
-        return [].concat.apply([], arrays);
-      });
-    }).catch(function () { return []; });
   }
 
   // ── HTML-escape helper ──────────────────────────────────────────────────────
@@ -153,17 +104,13 @@
 
     var html = '';
     slice.forEach(function (item) {
-      var idx     = item._driveIdx;
-      var urlBase = item._urlBase || '';   // e.g. "Drive%201/"
-      var enc     = encodeURIComponent(item.name)
-                      .replace(/#/g, '%23')
-                      .replace(/\?/g, '%3F');
-      var name    = esc(item.name);
+      var idx  = item._driveIdx;
+      var enc  = encodeURIComponent(item.name).replace(/#/g, '%23').replace(/\?/g, '%3F');
+      var name = esc(item.name);
 
       if (item.mimeType === 'application/vnd.google-apps.folder') {
-        var href = '/' + idx + ':/' + urlBase + enc + '/';
         html +=
-          '<a href="' + href + '" class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
+          '<a href="/' + idx + ':/' + enc + '/" class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
             '<span class="gdi-row-icon"><i class="bi bi-folder-fill gdi-icon-folder"></i></span>' +
             '<span class="gdi-row-name">' + name + '</span>' +
             '<span class="gdi-row-size"></span>' +
@@ -172,7 +119,6 @@
       } else {
         var ext     = item.fileExtension || '';
         var size    = fmtSize(item.size);
-        var viewHref = '/' + idx + ':/' + urlBase + enc + '?a=view';
         var dl      = UI.second_domain_for_dl
           ? UI.downloaddomain + (item.link || '')
           : window.location.origin + (item.link || '');
@@ -180,7 +126,7 @@
         html +=
           '<div class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
             '<span class="gdi-row-icon">' + getIcon(ext) + '</span>' +
-            '<a class="gdi-row-name" href="' + viewHref + '" title="' + name + '">' + name + '</a>' +
+            '<a class="gdi-row-name" href="/' + idx + ':/' + enc + '?a=view" title="' + name + '">' + name + '</a>' +
             '<span class="gdi-row-size">' + (UI.display_size ? size : '') + '</span>' +
             '<span class="gdi-row-acts">' +
               (UI.display_download && item.link
