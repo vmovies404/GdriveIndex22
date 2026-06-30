@@ -324,16 +324,7 @@ function title(path) {
 function nav(path) {
     const model = window.MODEL;
     const cur = window.current_drive_order || 0;
-    const drive_name = window.drive_names[cur] || 'Drive';
-    const names = window.drive_names;
     const search_text = model.is_search_page ? (model.q || '') : '';
-
-    // Drive switcher dropdown items
-    let driveItems = '';
-    names.forEach((name, idx) => {
-        driveItems += `<li><a class="dropdown-item${idx === cur ? ' active' : ''}" href="/${idx}:/">
-          <i class="bi bi-folder2-open"></i> ${name}</a></li>`;
-    });
 
     const logoHtml = UI.logo_image
         ? `<img src="${UI.logo_link_name}" alt="${UI.company_name}" height="28">`
@@ -354,14 +345,6 @@ function nav(path) {
     <div class="gdi-nav-sep"></div>
     ${searchBar}
     <div class="gdi-nav-actions">
-      <div class="dropdown">
-        <button class="gdi-nav-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="bi bi-grid-3x3-gap-fill"></i>
-          <span class="d-none d-md-inline">${drive_name}</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">${driveItems}</ul>
-      </div>
-      <div class="gdi-nav-sep"></div>
       <button id="theme-toggle" class="gdi-nav-btn" onclick="toggleTheme()" title="Toggle theme">
         <i class="bi bi-moon-stars" id="theme-icon"></i>
       </button>
@@ -374,6 +357,7 @@ function nav(path) {
     // Re-apply theme icon after injecting nav
     applyTheme(localStorage.getItem('gdi-theme') || 'dark');
 }
+
 
 // ============================================================================
 // MAIN ROUTER
