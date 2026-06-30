@@ -119,22 +119,32 @@
       } else {
         var ext     = item.fileExtension || '';
         var size    = fmtSize(item.size);
-        var dl      = UI.second_domain_for_dl
-          ? UI.downloaddomain + (item.link || '')
-          : window.location.origin + (item.link || '');
+        // Resolve dl safely (item.link is null when server withheld it for role reasons)
+        var dl      = item.link
+          ? (UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link)
+          : null;
+
+        // Role flags: canInteract = user can open/stream; canDownload = user can download
+        var canInteract = !window.UI || window.UI.user_role === 'admin' || window.UI.can_stream || window.UI.can_download;
+        var canDownload = !window.UI || window.UI.user_role === 'admin' || window.UI.can_download;
+
+        var fileNameHtml = canInteract
+          ? '<a class="gdi-row-name" href="/' + idx + ':/' + enc + '?a=view" title="' + name + '">' + name + '</a>'
+          : '<span class="gdi-row-name gdi-row-name--locked" title="' + name + '">' + name + '</span>';
 
         html +=
           '<div class="gdi-row" data-name="' + esc(item.name.toLowerCase()) + '">' +
             '<span class="gdi-row-icon">' + getIcon(ext) + '</span>' +
-            '<a class="gdi-row-name" href="/' + idx + ':/' + enc + '?a=view" title="' + name + '">' + name + '</a>' +
+            fileNameHtml +
             '<span class="gdi-row-size">' + (UI.display_size ? size : '') + '</span>' +
             '<span class="gdi-row-acts">' +
-              (UI.display_download && item.link
+              (UI.display_download && canDownload && dl
                 ? '<a class="gdi-act-btn" href="' + esc(dl) + '" title="Download"><i class="bi bi-download"></i></a>'
                 : '') +
             '</span>' +
           '</div>';
       }
+
     });
 
     listEl.innerHTML = html;

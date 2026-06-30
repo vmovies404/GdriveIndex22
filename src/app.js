@@ -724,9 +724,16 @@ function append_files_to_list(path, files) {
             item['size'] = formatFileSize(item['size']);
             is_file = true;
             const ext = item.fileExtension;
-            const link = UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link;
+            // Resolve link safely (item.link is null when server withheld it for role reasons)
+            const link = item.link
+                ? (UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link)
+                : null;
             const encodedName = encodeURIComponent(item.name);
             let pn = path + encodedName + '?a=view';
+
+            // Role flags: canInteract = can open/stream files, canDownload = can download
+            const canInteract = !window.UI || window.UI.user_role === 'admin' || window.UI.can_stream || window.UI.can_download;
+            const canDownload = !window.UI || window.UI.user_role === 'admin' || window.UI.can_download;
 
             const rawFilePath = path + encodedName;
             if (is_lastpage_loaded && item.name == 'README.md' && UI.render_readme_md) {
@@ -749,14 +756,17 @@ function append_files_to_list(path, files) {
                 : '';
 
             html += `<div class="gdi-row countitems size_items" data-name="${escHtml(item.name.toLowerCase())}" data-bytes="${rawSize}" data-date="${item['modifiedTime'] || ''}">
-  ${UI.allow_selecting_files ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
+  ${(canInteract && UI.allow_selecting_files) ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
   <span class="gdi-row-icon">${rowIcon}</span>
-  <a class="gdi-row-name" href="${pn}" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</a>
+  ${canInteract
+    ? `<a class="gdi-row-name" href="${pn}" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</a>`
+    : `<span class="gdi-row-name gdi-row-name--locked" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</span>`
+  }
   <span class="gdi-row-size">${UI.display_size ? item['size'] : ''}</span>
   <span class="gdi-row-date">${UI.display_time ? item['modifiedTime'] : ''}</span>
   <span class="gdi-row-acts">
-    ${UI.allow_selecting_files ? `<button class="gdi-act-btn" onclick="copyShareUrl(this.closest('.gdi-row').querySelector('.gdi-row-name').href)" title="Copy link"><i class="bi bi-link-45deg"></i></button>` : ''}
-    ${gdocType ? exportLinks : (UI.display_download ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : '')}
+    ${(canInteract && UI.allow_selecting_files) ? `<button class="gdi-act-btn" onclick="copyShareUrl(this.closest('.gdi-row').querySelector('.gdi-row-name').href)" title="Copy link"><i class="bi bi-link-45deg"></i></button>` : ''}
+    ${gdocType ? (canDownload ? exportLinks : '') : ((UI.display_download && canDownload && link) ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : '')}
   </span>
 </div>`;
         }
@@ -812,8 +822,15 @@ function append_files_to_fallback_list(path, files) {
                 item['size'] = formatFileSize(item['size']);
                 is_file = true;
                 const ext = item.fileExtension;
-                const link = UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link;
+                // Resolve link safely (item.link is null when server withheld it for role reasons)
+                const link = item.link
+                    ? (UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link)
+                    : null;
                 const pn = p + '&a=view';
+
+                // Role flags
+                const canInteract = !window.UI || window.UI.user_role === 'admin' || window.UI.can_stream || window.UI.can_download;
+                const canDownload = !window.UI || window.UI.user_role === 'admin' || window.UI.can_download;
 
                 if (is_lastpage_loaded && item.name == 'README.md' && UI.render_readme_md) {
                     get_file(p, item, function(data) {
@@ -829,14 +846,17 @@ function append_files_to_fallback_list(path, files) {
                 }
 
                 html += `<div class="gdi-row countitems size_items" data-name="${escHtml(item.name.toLowerCase())}" data-bytes="${rawSize}" data-date="${item['modifiedTime'] || ''}">
-  ${UI.allow_selecting_files ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
+  ${(canInteract && UI.allow_selecting_files) ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
   <span class="gdi-row-icon">${getFileIcon(ext)}</span>
-  <a class="gdi-row-name" href="${pn}" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</a>
+  ${canInteract
+    ? `<a class="gdi-row-name" href="${pn}" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</a>`
+    : `<span class="gdi-row-name gdi-row-name--locked" title="${escHtml(item.name)}" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</span>`
+  }
   <span class="gdi-row-size">${UI.display_size ? item['size'] : ''}</span>
   <span class="gdi-row-date">${UI.display_time ? item['modifiedTime'] : ''}</span>
   <span class="gdi-row-acts">
-    ${UI.allow_selecting_files ? `<button class="gdi-act-btn" onclick="copyShareUrl(this.closest('.gdi-row').querySelector('.gdi-row-name').href)" title="Copy link"><i class="bi bi-link-45deg"></i></button>` : ''}
-    ${UI.display_download ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : ''}
+    ${(canInteract && UI.allow_selecting_files) ? `<button class="gdi-act-btn" onclick="copyShareUrl(this.closest('.gdi-row').querySelector('.gdi-row-name').href)" title="Copy link"><i class="bi bi-link-45deg"></i></button>` : ''}
+    ${(UI.display_download && canDownload && link) ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : ''}
   </span>
 </div>`;
             }
@@ -969,16 +989,22 @@ function append_search_result_to_list(files) {
                 totalsize += rawSize;
                 item['size'] = formatFileSize(item['size']);
                 const ext = item.fileExtension;
-                const link = UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link;
+                // Resolve link safely (null when server withheld it for role reasons)
+                const link = item.link
+                    ? (UI.second_domain_for_dl ? UI.downloaddomain + item.link : window.location.origin + item.link)
+                    : null;
+                // Role flags
+                const canInteract = !window.UI || window.UI.user_role === 'admin' || window.UI.can_stream || window.UI.can_download;
+                const canDownload = !window.UI || window.UI.user_role === 'admin' || window.UI.can_download;
 
                 html += `<div class="gdi-row countitems size_items" data-name="${escHtml(item.name.toLowerCase())}" data-bytes="${rawSize}" data-date="${item['modifiedTime'] || ''}">
-  ${UI.allow_selecting_files ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
+  ${(canInteract && UI.allow_selecting_files) ? `<input class="gdi-row-check" type="checkbox" value="${link}">` : ''}
   <span class="gdi-row-icon">${getFileIcon(ext)}</span>
-  <span class="gdi-row-name" onclick="onSearchResultItemClick('${escHtml(item['id'])}', true, ${itemRootIdx})" data-bs-toggle="modal" data-bs-target="#SearchModel" style="cursor:pointer;" data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</span>
+  <span class="gdi-row-name" ${canInteract ? `onclick="onSearchResultItemClick('${escHtml(item['id'])}', true, ${itemRootIdx})" data-bs-toggle="modal" data-bs-target="#SearchModel" style="cursor:pointer;"` : ''} data-size="${UI.display_size ? item['size'] : ''}">${escHtml(item.name)}</span>
   <span class="gdi-row-size">${UI.display_size ? item['size'] : ''}</span>
   <span class="gdi-row-date">${UI.display_time ? item['modifiedTime'] : ''}</span>
   <span class="gdi-row-acts">
-    ${UI.display_download ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : ''}
+    ${(UI.display_download && canDownload && link) ? `<a class="gdi-act-btn" href="${link}" title="Download"><i class="bi bi-download"></i></a>` : ''}
   </span>
 </div>`;
             }
@@ -1115,6 +1141,12 @@ function dispatchFileView(obj, cookie_folder_id) {
         return;
     }
     if (!ext && !mimeType) return;
+
+    // Role gate: link is null when the server withheld it (customer restriction)
+    if (obj.link === null && window.UI && !window.UI.can_stream && !window.UI.can_download) {
+        $('#content').html(`<div class="gdi-wrap"><div class="gdi-viewer"><div class="gdi-viewer-card"><div class="gdi-file-header"><span class="gdi-file-header-icon"><i class="bi bi-lock-fill" style="color:#f59e0b;"></i></span><div class="gdi-file-header-info"><div class="gdi-file-header-name">Access Restricted</div><div class="gdi-file-header-meta">File access is not available for your account. Please contact an administrator.</div></div></div></div></div></div>`);
+        return;
+    }
     const name         = obj.name;
     const encoded_name = encodeURIComponent(name);
     const size         = formatFileSize(obj.size);

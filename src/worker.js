@@ -27,6 +27,8 @@ const authConfig = {
   "enable_password_file_verify": false, // support for .password file not working right now
   "direct_link_protection": false, // protects direct links with Display UI
   "disable_anonymous_download": false, // disables direct links without session
+  "customer_can_stream":   false, // allow customers to use the inline player (stream only)
+  "customer_can_download": false, // allow customers to download files (implies stream too)
   "file_link_expiry": 7, // expire file link in set number of days
   "search_all_drives": true, // search all of your drives instead of current drive if set to true
   "enable_login": true, // set to true if you want to add login system
@@ -89,6 +91,18 @@ async function getHmacKey() {
     if (v) hmac_base_key = v;
   }
   return hmac_base_key;
+}
+
+// Returns the session role ("admin" | "customer") for the current request,
+// or null if there is no valid session cookie.
+async function getUserRole(request) {
+  const cookie = request.headers.get('cookie') || '';
+  const m = cookie.match(/(?:^|;\s*)session=([^;]*)/);
+  const session = m ? m[1].trim() : null;
+  if (!session || session === 'null') return null;
+  try {
+    return (await decryptString(session.split('|')[1])) || 'customer';
+  } catch (_) { return null; }
 }
 
 // Google Workspace mimeType → export format table
@@ -178,7 +192,7 @@ function htmlSafeJSON(obj) {
   return JSON.stringify(obj).replace(/<\//g, '<\\/');
 }
 
-function html(current_drive_order = 0, model = {}) {
+function html(current_drive_order = 0, model = {}, roleData = null) {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -199,6 +213,10 @@ function html(current_drive_order = 0, model = {}) {
   window.MODEL = JSON.parse('${htmlSafeJSON(model)}');
   window.current_drive_order = ${current_drive_order};
   window.UI = JSON.parse('${htmlSafeJSON(uiConfig)}');
+  const _rd = ${JSON.stringify(roleData || { role: 'admin', canStream: true, canDownload: true })};
+  window.UI.user_role = _rd.role;
+  window.UI.can_stream = _rd.canStream;
+  window.UI.can_download = _rd.canDownload;
   window.player_config = JSON.parse('${htmlSafeJSON(player_config)}');
   </script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
@@ -1285,6 +1303,23 @@ async function handleRequest(request, event) {
     }
   }
 
+  // Compute role data once per request — used for access gates and UI injection.
+  // _roleData.authenticated is false for anonymous users (e.g. anonymous download path).
+  let _roleData;
+  if (authConfig.enable_login) {
+    const _rawRole = await getUserRole(request);
+    const _role = _rawRole || 'customer';
+    const _isAdmin = _role === 'admin';
+    _roleData = {
+      role:          _role,
+      authenticated: _rawRole !== null,
+      canStream:     _isAdmin || authConfig.customer_can_stream || authConfig.customer_can_download,
+      canDownload:   _isAdmin || authConfig.customer_can_download,
+    };
+  } else {
+    _roleData = { role: 'admin', authenticated: true, canStream: true, canDownload: true };
+  }
+
   if (gds.length === 0) {
     for (let i = 0; i < authConfig.roots.length; i++) {
       const gd = new googleDrive(authConfig, i);
@@ -1476,7 +1511,8 @@ async function handleRequest(request, event) {
 
     return new Response('Not found', { status: 404 });
   } else if (path == '/') {
-    return new Response(homepage, {
+    const _roleScript = `<script>window.UI.user_role='${_roleData.role}';window.UI.can_stream=${_roleData.canStream};window.UI.can_download=${_roleData.canDownload};<\/script>`;
+    return new Response(homepage.replace('</head>', _roleScript + '\n</head>'), {
       status: 200,
       headers: {
         "content-type": "text/html;charset=UTF-8",
@@ -1486,13 +1522,28 @@ async function handleRequest(request, event) {
     return new Response(html(0, {
       is_search_page: false,
       root_type: 1
-    }), {
+    }, _roleData), {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8'
       }
     });
   } else if (path == '/download.aspx') {
+    // Role gate: restrict logged-in customers by customer_can_stream / customer_can_download toggles.
+    // Anonymous users (authenticated: false) are governed by disable_anonymous_download instead.
+    if (authConfig.enable_login && _roleData.authenticated && _roleData.role === 'customer') {
+      const _isInline = url.searchParams.get('inline') === 'true';
+      if (_isInline && !_roleData.canStream) {
+        return new Response('Streaming is not available for your account.', {
+          status: 403, headers: { 'content-type': 'text/plain;charset=UTF-8' }
+        });
+      }
+      if (!_isInline && !_roleData.canDownload) {
+        return new Response('Downloads are not available for your account.', {
+          status: 403, headers: { 'content-type': 'text/plain;charset=UTF-8' }
+        });
+      }
+    }
     console.log("Download.aspx started");
     let file, expiry;
     try {
@@ -1602,14 +1653,14 @@ async function handleRequest(request, event) {
     const command = match.groups.command;
     if (command === 'search') {
       if (request.method === 'POST') {
-        return handleSearch(request, gd, user_ip);
+        return handleSearch(request, gd, user_ip, _roleData);
       } else {
         const params = url.searchParams;
         return new Response(html(gd.order, {
           q: (params.get("q") || '').replace(/'/g, "").replace(/"/g, ""),
           is_search_page: true,
           root_type: gd.root_type
-        }), {
+        }, _roleData), {
           status: 200,
           headers: {
             'Content-Type': 'text/html; charset=utf-8'
@@ -1655,7 +1706,7 @@ async function handleRequest(request, event) {
           status: 404, headers: { 'Content-Type': 'application/json;charset=UTF-8' }
         });
       }
-      details.link = await generateLink(details.id, user_ip);
+      details.link = (_roleData.canDownload || _roleData.canStream) ? await generateLink(details.id, user_ip) : null;
       details.id = formdata.id;
       if (Array.isArray(details.parents) && details.parents.length > 0) {
         details.parents[0] = null;
@@ -1701,14 +1752,14 @@ async function handleRequest(request, event) {
 
   //path = path.replace(gd.url_path_prefix, '') || '/';
   if (request.method == 'POST') {
-    return apiRequest(request, gd, user_ip);
+    return apiRequest(request, gd, user_ip, _roleData);
   }
 
   const action = url.searchParams.get('a');
   if (path.slice(-1) == '/' || action != null) {
     return new Response(html(gd.order, {
       root_type: gd.root_type
-    }), {
+    }, _roleData), {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8'
@@ -1728,6 +1779,19 @@ async function handleRequest(request, event) {
     if (gd.root.protect_file_link && authConfig.enable_login) return login();
     if (!file || !file.id) {
       return new Response(not_found, { status: 404, headers: { 'content-type': 'text/html;charset=UTF-8' } });
+    }
+    // Role gate: apply customer stream/download restrictions to direct file serving
+    if (authConfig.enable_login && _roleData.authenticated && _roleData.role === 'customer') {
+      if (inline && !_roleData.canStream) {
+        return new Response('Streaming is not available for your account.', {
+          status: 403, headers: { 'content-type': 'text/plain;charset=UTF-8' }
+        });
+      }
+      if (!inline && !_roleData.canDownload) {
+        return new Response('Downloads are not available for your account.', {
+          status: 403, headers: { 'content-type': 'text/plain;charset=UTF-8' }
+        });
+      }
     }
     return download(file.id, range, inline);
 
@@ -1825,7 +1889,7 @@ async function generateLink(file_id, user_ip) {
   return url;
 }
 
-async function apiRequest(request, gd, user_ip) {
+async function apiRequest(request, gd, user_ip, roleData = null) {
   const url = new URL(request.url);
   let path = url.pathname;
   path = path.replace(gd.url_path_prefix, '') || '/';
@@ -1854,6 +1918,8 @@ async function apiRequest(request, gd, user_ip) {
       }
     }
 
+    // Only generate download links when the user's role permits it
+    const _canLink = !roleData || roleData.canDownload || roleData.canStream;
     list_result.data.files = await Promise.all(list_result.data.files.map(async (file) => {
       const {
         driveId,
@@ -1866,7 +1932,7 @@ async function apiRequest(request, gd, user_ip) {
       const encryptedDriveId = await encryptString(driveId);
 
       let link = null;
-      if (mimeType !== 'application/vnd.google-apps.folder') {
+      if (mimeType !== 'application/vnd.google-apps.folder' && _canLink) {
         link = await generateLink(id, user_ip);
       }
 
@@ -1906,7 +1972,8 @@ async function apiRequest(request, gd, user_ip) {
 
     const encryptedId = await encryptString(id);
     const encryptedDriveId = await encryptString(driveId);
-    const link = await generateLink(id, user_ip);
+    const _singleCanLink = !roleData || roleData.canDownload || roleData.canStream;
+    const link = _singleCanLink ? await generateLink(id, user_ip) : null;
     const encryptedFile = {
       ...fileWithoutId,
       id: encryptedId,
@@ -1929,7 +1996,7 @@ async function apiRequest(request, gd, user_ip) {
 }
 
 // deal with search
-async function handleSearch(request, gd, user_ip = '') {
+async function handleSearch(request, gd, user_ip = '', roleData = null) {
   const option = {
     status: 200,
     headers: {
@@ -1961,7 +2028,8 @@ async function handleSearch(request, gd, user_ip = '') {
 
     const encryptedId = await encryptString(id);
     const encryptedDriveId = await encryptString(driveId);
-    const link = await generateLink(id, user_ip);
+    const _searchCanLink = !roleData || roleData.canDownload || roleData.canStream;
+    const link = _searchCanLink ? await generateLink(id, user_ip) : null;
     // rootIdx encoding:
     //  >= 0  file's driveId matches authConfig.roots[rootIdx] — navigate to that root
     //  -1    no driveId (My Drive file) — need parent-chain walk to find folder roots

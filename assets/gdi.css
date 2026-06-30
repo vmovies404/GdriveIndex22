@@ -488,6 +488,15 @@ a:hover { color: var(--gdi-accent-hover); }
 a.gdi-row .gdi-row-name { color: inherit; }
 a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
 
+/* Locked file names: shown to customers who cannot stream or download */
+.gdi-row-name--locked {
+  cursor: default;
+  color: var(--gdi-text-muted);
+  user-select: none;
+}
+.gdi-row-name--locked:hover { color: var(--gdi-text-muted); }
+
+
 .gdi-row-size {
   width: 82px;
   text-align: right;
