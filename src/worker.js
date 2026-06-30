@@ -173,7 +173,7 @@ const player_config = {
 // DON'T TOUCH BELOW THIS UNLESS YOU KNOW WHAT YOU'RE DOING
 const gds = [];
 const drive_list = authConfig.roots.map(it => it.id);
-const cdn_base = 'https://cdn.jsdelivr.net/gh/sisisabia58/GdriveIndex22@8a8d8c93243099de6be560f2ceda3a4d4273d412'; // pinned commit — update after each push
+const cdn_base = 'https://cdn.jsdelivr.net/gh/sisisabia58/GdriveIndex22@de5be1f29df8a272b31cf2bf9682988adda2b987'; // pinned commit — update after each push
 
 const dev_mode = environment !== 'production';
 let app_js_file;
