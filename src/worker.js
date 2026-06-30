@@ -553,6 +553,21 @@ const admin_html = `<!DOCTYPE html>
     .toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #8b9ab0; border-radius: 50%; transition: transform .2s, background .2s; }
     input:checked + .toggle-slider { background: #4d9fec; }
     input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
+    /* Drive Folders card */
+    .roots-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .roots-table th { color: #8b9ab0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 6px 8px; border-bottom: 1px solid #2d3748; text-align: left; font-weight: 600; }
+    .roots-table td { padding: 8px 6px; border-bottom: 1px solid #1e2736; vertical-align: middle; }
+    .roots-table tr:last-child td { border-bottom: none; }
+    .root-num { color: #8b9ab0; font-size: 12px; width: 24px; text-align: center; padding-right: 4px; }
+    .root-name-col { width: 180px; }
+    .root-input { background: #0d1117 !important; border: 1px solid #2d3748 !important; color: #e2e8f0 !important; border-radius: 4px; padding: 5px 8px; font-size: 13px; width: 100%; box-sizing: border-box; }
+    .root-input:focus { outline: none; border-color: #4d9fec !important; }
+    .root-id-input { font-family: monospace; font-size: 12px; }
+    .root-icon-btn { background: none; border: 1px solid #2d3748; border-radius: 4px; color: #8b9ab0; padding: 3px 7px; cursor: pointer; font-size: 13px; line-height: 1; margin-left: 3px; }
+    .root-icon-btn:hover:not(:disabled) { border-color: #4d9fec; color: #4d9fec; }
+    .root-del-btn:hover:not(:disabled) { border-color: #f87171 !important; color: #f87171 !important; }
+    .root-icon-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .roots-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 8px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -566,6 +581,26 @@ const admin_html = `<!DOCTYPE html>
         <a href="/"><i class="bi bi-arrow-left"></i> Back to portal</a>
         &nbsp;&nbsp;
         <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      </div>
+    </div>
+
+    <div class="card" id="card-roots">
+      <h5 style="margin-bottom:4px;"><i class="bi bi-folder2-open"></i> Drive Folders</h5>
+      <p style="color:#8b9ab0;font-size:12px;margin:0 0 14px;">Manage the Google Drive folder roots. Changes apply on the next visitor request — no redeploy needed.</p>
+      <table class="roots-table">
+        <thead><tr>
+          <th class="root-num">#</th>
+          <th class="root-name-col">Display Name</th>
+          <th>Google Drive Folder ID</th>
+          <th style="width:80px;"></th>
+        </tr></thead>
+        <tbody id="roots-tbody">
+          <tr><td colspan="4" class="empty-row"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
+        </tbody>
+      </table>
+      <div class="roots-footer">
+        <button class="btn btn-ghost" onclick="addRoot()"><i class="bi bi-plus-lg"></i> Add Drive</button>
+        <button class="btn btn-primary" id="btn-apply-roots" onclick="applyRoots()"><i class="bi bi-check-lg"></i> Apply All</button>
       </div>
     </div>
 
@@ -744,8 +779,103 @@ const admin_html = `<!DOCTYPE html>
       } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
     }
 
+    // ── Drive Folder Manager ──────────────────────────────────────────────────
+    var _roots = [];
+
+    function _escHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function loadRoots() {
+      try {
+        var r = await fetch('/admin/api/roots');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        _roots = await r.json();
+        renderRoots();
+      } catch(e) { showToast('Roots load failed: ' + e.message, 'error'); }
+    }
+
+    function renderRoots() {
+      var tbody = document.getElementById('roots-tbody');
+      if (!tbody) return;
+      var html = '';
+      for (var i = 0; i < _roots.length; i++) {
+        var root = _roots[i];
+        var disabledAttr = _roots.length <= 1 ? ' disabled' : '';
+        var idx = i;
+        html += '<tr>' +
+          '<td class="root-num">' + (idx + 1) + '</td>' +
+          '<td class="root-name-col"><input class="root-input" value="' + _escHtml(root.name) + '"' +
+            ' oninput="_roots[' + idx + '].name=this.value"' +
+            ' placeholder="Drive ' + (idx + 1) + '"></td>' +
+          '<td><input class="root-input root-id-input" value="' + _escHtml(root.id) + '"' +
+            ' oninput="_roots[' + idx + '].id=this.value.trim()"' +
+            ' placeholder="Google Drive folder ID" spellcheck="false" autocomplete="off"></td>' +
+          '<td style="text-align:right;white-space:nowrap;">' +
+            '<button class="root-icon-btn" title="Open in Google Drive"' +
+              ' onclick="if(_roots[' + idx + '].id)window.open(' + "'https://drive.google.com/drive/folders/'+_roots[" + idx + "].id,'_blank')" + '">' +
+              '<i class="bi bi-box-arrow-up-right"></i></button>' +
+            '<button class="root-icon-btn root-del-btn" title="Remove"' + disabledAttr +
+              ' onclick="removeRoot(' + idx + ')">' +
+              '<i class="bi bi-trash"></i></button>' +
+          '</td>' +
+        '</tr>';
+      }
+      tbody.innerHTML = html || '<tr><td colspan="4" class="empty-row">No drives configured.</td></tr>';
+    }
+
+    function addRoot() {
+      _roots.push({ id: '', type: 'folder', name: 'Drive ' + (_roots.length + 1), protect_file_link: false });
+      renderRoots();
+      var rows = document.querySelectorAll('#roots-tbody tr');
+      if (rows.length) {
+        var newRow = rows[rows.length - 1];
+        var idInput = newRow.querySelectorAll('.root-input')[1];
+        if (idInput) idInput.focus();
+      }
+    }
+
+    function removeRoot(idx) {
+      if (_roots.length <= 1) return;
+      if (!confirm('Remove "' + (_roots[idx].name || 'this drive') + '"?')) return;
+      _roots.splice(idx, 1);
+      renderRoots();
+    }
+
+    async function applyRoots() {
+      var btn = document.getElementById('btn-apply-roots');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving\u2026';
+      var empty = _roots.filter(function(r){ return !r.id.trim(); });
+      if (empty.length) {
+        showToast('All rows need a Folder ID', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Apply All';
+        return;
+      }
+      try {
+        var r = await fetch('/admin/api/roots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(_roots)
+        });
+        var data = await r.json();
+        if (r.ok && data.ok) {
+          showToast('Drive folders updated \u2713 \u2014 takes effect on next visitor request');
+          loadRoots();
+        } else {
+          showToast(data.message || 'Save failed', 'error');
+        }
+      } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-lg"></i> Apply All';
+    }
+
     loadUsers();
     loadConfig();
+    loadRoots();
+
   </script>
 </body>
 </html>`;
@@ -1366,6 +1496,27 @@ async function handleRequest(request, event) {
     }
   }
 
+  // ── KV roots: single source of truth ────────────────────────────────────────
+  // On first boot (KV empty) auto-seed from authConfig.roots — then KV is the sole source forever.
+  let _liveRoots;
+  try {
+    const _rawRoots = await ENV.get('__gdi_roots__');
+    if (_rawRoots) {
+      const _parsed = JSON.parse(_rawRoots);
+      if (Array.isArray(_parsed) && _parsed.length > 0) _liveRoots = _parsed;
+    }
+  } catch (_) {}
+  if (!_liveRoots) {
+    _liveRoots = authConfig.roots;
+    try { await ENV.put('__gdi_roots__', JSON.stringify(_liveRoots)); } catch (_) {}
+  }
+  if (JSON.stringify(_liveRoots.map(r => r.id)) !==
+      JSON.stringify(authConfig.roots.map(r => r.id)) ||
+      gds.length !== _liveRoots.length) {
+    authConfig.roots = _liveRoots;
+    gds.length = 0;
+  }
+
   // Compute role data once per request — used for access gates and UI injection.
   // _roleData.authenticated is false for anonymous users (e.g. anonymous download path).
   // Live toggle values come from KV (admin panel) with fallback to authConfig defaults.
@@ -1542,7 +1693,9 @@ async function handleRequest(request, event) {
       const list = await ENV.list();
       const users = [];
       for (const k of list.keys) {
-        if (k.name.endsWith('_session') || k.name.endsWith('_ip') || k.name === '__gdi_access_config__') continue;
+        if (k.name.endsWith('_session') || k.name.endsWith('_ip')
+            || k.name === '__gdi_access_config__'
+            || k.name === '__gdi_roots__') continue;
         const value = await ENV.get(k.name);
         let role;
         if (value === 'admin' || value === 'customer') role = value;
@@ -1579,7 +1732,48 @@ async function handleRequest(request, event) {
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
+    if (path === '/admin/api/roots' && request.method === 'GET') {
+      const raw = await ENV.get('__gdi_roots__');
+      const roots = (raw ? JSON.parse(raw) : null) || authConfig.roots;
+      return new Response(JSON.stringify(roots), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (path === '/admin/api/roots' && request.method === 'POST') {
+      let body;
+      try { body = await request.json(); } catch (_) {
+        return new Response(JSON.stringify({ ok: false, message: 'Invalid JSON' }), {
+          status: 400, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (!Array.isArray(body) || body.length === 0) {
+        return new Response(JSON.stringify({ ok: false, message: 'At least 1 drive root is required' }), {
+          status: 400, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      const cleaned = body.map((r, i) => ({
+        id:                (r.id || '').trim(),
+        type:              'folder',
+        name:              ((r.name || '').trim() || ('Drive ' + (i + 1))),
+        protect_file_link: false,
+      }));
+      const invalid = cleaned.filter(r => !r.id);
+      if (invalid.length) {
+        return new Response(JSON.stringify({ ok: false, message: 'All entries require a non-empty Folder ID' }), {
+          status: 400, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      await ENV.put('__gdi_roots__', JSON.stringify(cleaned));
+      authConfig.roots = cleaned;
+      gds.length = 0; // force rebuild on next request
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     if (path === '/admin/api/config' && request.method === 'GET') {
+
       const raw = await ENV.get('__gdi_access_config__');
       let config = { customer_can_stream: authConfig.customer_can_stream, customer_can_download: authConfig.customer_can_download };
       if (raw) { try { Object.assign(config, JSON.parse(raw)); } catch (_) {} }
