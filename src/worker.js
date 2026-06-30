@@ -114,7 +114,7 @@ const GDOC_EXPORT_FORMATS = {
 const uiConfig = {
   "theme": "darkly", // switch between themes, default set to slate, select from https://gitlab.com/GoogleDriveIndex/Google-Drive-Index
   "version": CDN_VERSION, // auto-updated by build script — get latest code using generator at https://bdi-generator.hashhackers.com
-  "debug_mode": true, // set to true to show a debug panel in the footer with API requests, errors, and page info
+  "debug_mode": false, // set to true to show a debug panel in the footer with API requests, errors, and page info
   // If you're using Image then set to true, If you want text then set it to false
   "logo_image": true, // true if you're using image link in next option.
   "logo_height": "", // only if logo_image is true
