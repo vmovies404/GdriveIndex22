@@ -1496,26 +1496,21 @@ async function handleRequest(request, event) {
     }
   }
 
-  // ── KV roots: single source of truth ────────────────────────────────────────
-  // On first boot (KV empty) auto-seed from authConfig.roots — then KV is the sole source forever.
-  let _liveRoots;
+  // ── KV roots: read every request so admin changes propagate ─────────────────
+  // IMPORTANT: do NOT touch gds here — cold start (gds.length===0) and the
+  // POST /admin/api/roots handler are the only safe places to reset gds.
+  // Resetting gds.length here caused a race under concurrent requests where
+  // gds could be wiped mid-population, resulting in infinite loading.
   try {
     const _rawRoots = await ENV.get('__gdi_roots__');
     if (_rawRoots) {
       const _parsed = JSON.parse(_rawRoots);
-      if (Array.isArray(_parsed) && _parsed.length > 0) _liveRoots = _parsed;
+      if (Array.isArray(_parsed) && _parsed.length > 0) authConfig.roots = _parsed;
+    } else {
+      // First boot: seed KV from hardcoded defaults (fire-and-forget, non-blocking)
+      ENV.put('__gdi_roots__', JSON.stringify(authConfig.roots)).catch(() => {});
     }
   } catch (_) {}
-  if (!_liveRoots) {
-    _liveRoots = authConfig.roots;
-    try { await ENV.put('__gdi_roots__', JSON.stringify(_liveRoots)); } catch (_) {}
-  }
-  if (JSON.stringify(_liveRoots.map(r => r.id)) !==
-      JSON.stringify(authConfig.roots.map(r => r.id)) ||
-      gds.length !== _liveRoots.length) {
-    authConfig.roots = _liveRoots;
-    gds.length = 0;
-  }
 
   // Compute role data once per request — used for access gates and UI injection.
   // _roleData.authenticated is false for anonymous users (e.g. anonymous download path).
