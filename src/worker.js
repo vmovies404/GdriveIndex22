@@ -544,6 +544,15 @@ const admin_html = `<!DOCTYPE html>
     .add-form .form-control { flex: 1; min-width: 200px; }
     .add-form .form-select { width: 130px; flex-shrink: 0; }
     .empty-row { text-align: center; color: #8b9ab0; padding: 32px !important; }
+    /* Toggle switches for Customer Access card */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #2d3748; }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; margin-left: 20px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #2d3748; border-radius: 24px; transition: background .2s; }
+    .toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #8b9ab0; border-radius: 50%; transition: transform .2s, background .2s; }
+    input:checked + .toggle-slider { background: #4d9fec; }
+    input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
   </style>
 </head>
 <body>
@@ -557,6 +566,31 @@ const admin_html = `<!DOCTYPE html>
         <a href="/"><i class="bi bi-arrow-left"></i> Back to portal</a>
         &nbsp;&nbsp;
         <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h5 style="margin-bottom:4px;"><i class="bi bi-sliders"></i> Customer Access</h5>
+      <p style="color:#8b9ab0;font-size:12px;margin:0 0 16px;">Controls what logged-in <strong style="color:#4d9fec;">customer</strong> accounts can do. Changes apply immediately — no redeploy needed.</p>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:500;">Allow Streaming</div>
+          <div style="color:#8b9ab0;font-size:12px;margin-top:3px;">Customers can open the inline video / audio player</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="chk-stream" onchange="saveConfig('stream')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:500;">Allow Download</div>
+          <div style="color:#8b9ab0;font-size:12px;margin-top:3px;">Customers can download files (streaming is also enabled)</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="chk-download" onchange="saveConfig('download')">
+          <span class="toggle-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -682,7 +716,36 @@ const admin_html = `<!DOCTYPE html>
       }
     }
 
+    async function loadConfig() {
+      try {
+        const r = await fetch('/admin/api/config');
+        if (!r.ok) throw new Error('Failed to load config');
+        const cfg = await r.json();
+        document.getElementById('chk-stream').checked   = !!cfg.customer_can_stream;
+        document.getElementById('chk-download').checked = !!cfg.customer_can_download;
+      } catch (e) { showToast('Config load failed: ' + e.message, 'error'); }
+    }
+
+    async function saveConfig(which) {
+      const customer_can_stream   = document.getElementById('chk-stream').checked;
+      const customer_can_download = document.getElementById('chk-download').checked;
+      try {
+        const r = await fetch('/admin/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_can_stream, customer_can_download })
+        });
+        const data = await r.json();
+        if (r.ok && data.ok) {
+          const label = which === 'stream' ? 'Streaming' : 'Downloads';
+          const val   = which === 'stream' ? customer_can_stream : customer_can_download;
+          showToast(label + ': ' + (val ? 'ON ✓' : 'OFF'));
+        } else { showToast('Save failed', 'error'); }
+      } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
+    }
+
     loadUsers();
+    loadConfig();
   </script>
 </body>
 </html>`;
@@ -1305,6 +1368,13 @@ async function handleRequest(request, event) {
 
   // Compute role data once per request — used for access gates and UI injection.
   // _roleData.authenticated is false for anonymous users (e.g. anonymous download path).
+  // Live toggle values come from KV (admin panel) with fallback to authConfig defaults.
+  let _liveConfig = { customer_can_stream: authConfig.customer_can_stream, customer_can_download: authConfig.customer_can_download };
+  try {
+    const _rawCfg = await ENV.get('__gdi_access_config__');
+    if (_rawCfg) Object.assign(_liveConfig, JSON.parse(_rawCfg));
+  } catch (_) {}
+
   let _roleData;
   if (authConfig.enable_login) {
     const _rawRole = await getUserRole(request);
@@ -1313,8 +1383,8 @@ async function handleRequest(request, event) {
     _roleData = {
       role:          _role,
       authenticated: _rawRole !== null,
-      canStream:     _isAdmin || authConfig.customer_can_stream || authConfig.customer_can_download,
-      canDownload:   _isAdmin || authConfig.customer_can_download,
+      canStream:     _isAdmin || _liveConfig.customer_can_stream || _liveConfig.customer_can_download,
+      canDownload:   _isAdmin || _liveConfig.customer_can_download,
     };
   } else {
     _roleData = { role: 'admin', authenticated: true, canStream: true, canDownload: true };
@@ -1472,7 +1542,7 @@ async function handleRequest(request, event) {
       const list = await ENV.list();
       const users = [];
       for (const k of list.keys) {
-        if (k.name.endsWith('_session') || k.name.endsWith('_ip')) continue;
+        if (k.name.endsWith('_session') || k.name.endsWith('_ip') || k.name === '__gdi_access_config__') continue;
         const value = await ENV.get(k.name);
         let role;
         if (value === 'admin' || value === 'customer') role = value;
@@ -1506,6 +1576,20 @@ async function handleRequest(request, event) {
         return new Response(JSON.stringify({ ok: false, message: 'Cannot remove yourself' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
       }
       await ENV.delete(email);
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === '/admin/api/config' && request.method === 'GET') {
+      const raw = await ENV.get('__gdi_access_config__');
+      let config = { customer_can_stream: authConfig.customer_can_stream, customer_can_download: authConfig.customer_can_download };
+      if (raw) { try { Object.assign(config, JSON.parse(raw)); } catch (_) {} }
+      return new Response(JSON.stringify(config), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === '/admin/api/config' && request.method === 'POST') {
+      const body = await request.json();
+      const config = { customer_can_stream: !!body.customer_can_stream, customer_can_download: !!body.customer_can_download };
+      await ENV.put('__gdi_access_config__', JSON.stringify(config));
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
