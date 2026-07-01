@@ -15,7 +15,7 @@ const blocked_region = ['']; // add regional codes seperated by comma, eg. ['IN'
 const blocked_asn = []; // add ASN numbers from http://www.bgplookingglass.com/list-of-autonomous-system-numbers, eg. [16509, 12345]
 const CDN_VERSION = '2.5.9'; // auto-updated by npm run build
 const authConfig = {
-  "siteName": "Elevate Drive Index", // Website name
+  "siteName": "Elevate Digital Drive", // Website name
   "client_id": "YOUR_CLIENT_ID", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
   "client_secret": "YOUR_CLIENT_SECRET", // Client Secret from Google Cloud Console (sentinel: real value via KV secret CLIENT_SECRET)
   "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
@@ -36,7 +36,7 @@ const authConfig = {
   "enable_social_login": true, // set to true if you want to add social login system
   "google_client_id_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_ID", // Google Client ID for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_ID)
   "google_client_secret_for_login": "YOUR_GOOGLE_LOGIN_CLIENT_SECRET", // Google Client Secret for Login (sentinel: real value via Wrangler secret GOOGLE_LOGIN_CLIENT_SECRET)
-  "redirect_domain": "https://google-drive-index.sisisabia58.workers.dev", // Domain for login redirect eg. https://example.com
+  "redirect_domain": "https://drive.elevatedigital.biz.id", // Domain for login redirect eg. https://example.com
   "login_database": "kv", // "Local" | "KV" | "D1" | "Hyperdrive" — KV: customers stored in ENV namespace
   "login_days": 7, // days to keep logged in
   "enable_ip_lock": false, // set to true if you want to lock user downloads to user IP
