@@ -2607,30 +2607,19 @@ class googleDrive {
     }
     const words = keyword.split(/\s+/);
     const name_search_str = `name contains '${words.join("' AND name contains '")}'`;
-    const params = {};
-    if (is_user_drive) {
-      if (authConfig.search_all_drives) {
-        params.corpora = 'allDrives';
-        params.includeItemsFromAllDrives = true;
-        params.supportsAllDrives = true;
-      } else {
-        params.corpora = 'user';
-      }
-    }
-    if (is_share_drive) {
-      if (authConfig.search_all_drives) {
-        params.corpora = 'allDrives';
-      } else {
-        params.corpora = 'drive';
-        params.driveId = this.root.id;
-      }
-      params.includeItemsFromAllDrives = true;
-      params.supportsAllDrives = true;
-    }
+    const params = {
+      corpora: 'allDrives',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    };
     if (page_token) {
       params.pageToken = page_token;
     }
-    params.q = `trashed = false AND mimeType != 'application/vnd.google-apps.shortcut' and mimeType != 'application/vnd.google-apps.form' and mimeType != 'application/vnd.google-apps.site' AND name !='.password' AND (${name_search_str})`;
+
+    // Construct OR clause for all root folder IDs to search only homepage-level contents
+    const parentQuery = this.authConfig.roots.map(r => `'${r.id}' in parents`).join(' or ');
+
+    params.q = `(${parentQuery}) AND trashed = false AND mimeType != 'application/vnd.google-apps.shortcut' and mimeType != 'application/vnd.google-apps.form' and mimeType != 'application/vnd.google-apps.site' AND name !='.password' AND (${name_search_str})`;
     params.fields = "nextPageToken, files(id, driveId, name, mimeType, size , modifiedTime)";
     params.pageSize = this.authConfig.search_result_list_page_size;
     params.orderBy = 'folder, name, modifiedTime desc';
