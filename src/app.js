@@ -396,6 +396,25 @@ function requestListPath(path, params, resultCallback, _unused, retries = 3, fal
         page_token: params['page_token'] || '',
         page_index: params['page_index'] || 0
     };
+
+    // Client-Side Session Cache check
+    const cacheKey = `gdi_cache_${path}_${requestData.id}_${requestData.page_token}_${requestData.page_index}_${requestData.password}`;
+    try {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+            const res = JSON.parse(cachedData);
+            if (res && res.data) {
+                setTimeout(() => {
+                    resultCallback(res, path, requestData);
+                    $('#update').hide();
+                }, 0);
+                return;
+            }
+        }
+    } catch (_) {
+        // ignore
+    }
+
     const maxRetries = (retries != null && retries >= 0) ? retries : 3;
     $('#update').show();
     $('#update').html(`<div class="gdi-alert gdi-alert-info">Connecting…</div>`);
@@ -418,6 +437,12 @@ function requestListPath(path, params, resultCallback, _unused, retries = 3, fal
                 $('#list').html(`<div class="gdi-empty"><i class="bi bi-exclamation-circle"></i><p>Server didn't send any data.</p></div>`);
                 $('#update').hide();
             } else if (res && res.data) {
+                // Save to sessionStorage
+                try {
+                    sessionStorage.setItem(cacheKey, JSON.stringify(res));
+                } catch (_) {
+                    // ignore
+                }
                 resultCallback(res, path, requestData);
                 $('#update').hide();
             }

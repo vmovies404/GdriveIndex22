@@ -2551,16 +2551,46 @@ class googleDrive {
     }
     let url = 'https://www.googleapis.com/drive/v3/files';
     url += '?' + enQuery(params);
-    const requestOption = await this.requestOptions();
-    let response;
-    for (let i = 0; i < 3; i++) {
-      response = await fetch(url, requestOption);
-      if (response.ok) {
-        break;
+
+    // Cache lookup using Cloudflare Cache API (ignores Auth header by using custom GET Request key)
+    const cacheKey = new Request(url, { method: 'GET' });
+    const cache = typeof caches !== 'undefined' ? caches.default : null;
+    const cachedResponse = cache ? await cache.match(cacheKey) : null;
+
+    if (cachedResponse) {
+      obj = await cachedResponse.json();
+    } else {
+      const requestOption = await this.requestOptions();
+      let response;
+      for (let i = 0; i < 3; i++) {
+        response = await fetch(url, requestOption);
+        if (response.ok) {
+          break;
+        }
+        await sleep(800 * (i + 1));
       }
-      await sleep(800 * (i + 1));
+      if (!response.ok) {
+        return { nextPageToken: null, curPageIndex: page_index, data: { files: [] } };
+      }
+      obj = await response.json();
+
+      // Store in Cloudflare Edge Cache for 120 seconds if we retrieved a valid response
+      if (cache && obj && Array.isArray(obj.files)) {
+        const cacheResponse = new Response(JSON.stringify(obj), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Cache-Control': 'public, max-age=120'
+          }
+        });
+        try {
+          await cache.put(cacheKey, cacheResponse);
+        } catch (_) {
+          // ignore
+        }
+      }
     }
-    obj = await response.json();
+
     if (!obj.files) obj.files = [];
 
     return {
