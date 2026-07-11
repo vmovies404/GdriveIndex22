@@ -2847,9 +2847,22 @@ class googleDrive {
 
   // Returns an access token: per-drive creds if configured, else global
   async _getAccessToken() {
-    const c = this.root.client_id && this.root.client_secret && this.root.refresh_token
-      ? this.root
-      : (this.root.service_account && this.root.service_account_json ? this.root : null);
+    // 1. Try to find a Cloudflare Secret for this drive index (1-indexed: REFRESH_TOKEN_1, REFRESH_TOKEN_2, etc.)
+    const custom_rt = await getSecret("REFRESH_TOKEN_" + (this.order + 1));
+
+    let c = null;
+    if (custom_rt) {
+      c = {
+        client_id: await getSecret("CLIENT_ID") || authConfig.client_id,
+        client_secret: await getSecret("CLIENT_SECRET") || authConfig.client_secret,
+        refresh_token: custom_rt
+      };
+    } else {
+      c = this.root.client_id && this.root.client_secret && this.root.refresh_token
+        ? this.root
+        : (this.root.service_account && this.root.service_account_json ? this.root : null);
+    }
+
     if (!c) return getAccessToken();
     // Per-drive token cache stored on the instance
     if (this._token_expiry && this._token_expiry > Date.now()) return this._access_token;
