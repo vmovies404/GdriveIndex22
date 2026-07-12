@@ -2646,8 +2646,8 @@ class googleDrive {
       params.pageToken = page_token;
     }
 
-    // Construct OR clause for all root folder IDs to search only homepage-level contents
-    const parentQuery = this.authConfig.roots.map(r => `'${r.id}' in parents`).join(' or ');
+    // Construct clause for the current root folder ID only to prevent cross-account permission errors
+    const parentQuery = `'${this.root.id}' in parents`;
 
     params.q = `(${parentQuery}) AND trashed = false AND mimeType != 'application/vnd.google-apps.shortcut' and mimeType != 'application/vnd.google-apps.form' and mimeType != 'application/vnd.google-apps.site' AND name !='.password' AND (${name_search_str})`;
     params.fields = "nextPageToken, files(id, driveId, name, mimeType, size , modifiedTime)";
@@ -2666,6 +2666,14 @@ class googleDrive {
       await sleep(800 * (i + 1));
     }
     if (!response.ok) {
+      let errText = "";
+      try {
+        const errObj = await response.clone().json();
+        errText = ` - ${errObj.error.message || errObj.error.code}`;
+      } catch (_) {
+        try { errText = " - " + await response.clone().text(); } catch (__) { /* ignore */ }
+      }
+      console.error(`Google Search API failed with status ${response.status}${errText}`);
       return { nextPageToken: null, curPageIndex: page_index, data: { files: [] } };
     }
     const res_obj = await response.json();
