@@ -2554,7 +2554,7 @@ class googleDrive {
 
     // Cache lookup using Cloudflare Cache API (ignores Auth header by using custom GET Request key)
     const cacheKey = new Request(url, { method: 'GET' });
-    const cache = typeof caches !== 'undefined' ? caches.default : null;
+    const cache = typeof caches !== 'undefined' ? await caches.open('gdi-cache') : null;
     const cachedResponse = cache ? await cache.match(cacheKey) : null;
 
     if (cachedResponse) {
