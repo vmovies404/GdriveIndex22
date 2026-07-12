@@ -514,146 +514,299 @@ const admin_html = `<!DOCTYPE html>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
-    body { background: #0d1117; color: #e2e8f0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
-    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-    h1 { font-size: 24px; margin-bottom: 4px; }
-    .subtitle { color: #8b9ab0; font-size: 13px; margin-bottom: 24px; }
-    .card { background: #161b22; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .form-control, .form-select { background: #0d1117 !important; border-color: #2d3748 !important; color: #e2e8f0 !important; font-size: 13px; border-radius: 5px; }
-    .form-control:focus, .form-select:focus { border-color: #4d9fec !important; box-shadow: 0 0 0 3px rgba(77,159,236,.1) !important; }
-    .btn { font-size: 13px; border-radius: 5px; }
-    .btn-primary { background: #4d9fec; border-color: #4d9fec; }
-    .btn-primary:hover { background: #3a8fd4; border-color: #3a8fd4; }
-    .btn-danger { background: #f87171; border-color: #f87171; }
-    .btn-danger:hover { background: #e35555; border-color: #e35555; }
-    .btn-ghost { background: transparent; border: 1px solid #2d3748; color: #8b9ab0; }
+    :root {
+      --gdi-primary: #14b8a6;
+      --gdi-primary-hover: #0d9488;
+      --gdi-bg: #0d1117;
+      --gdi-card-bg: rgba(22, 27, 34, 0.85);
+      --gdi-border: #30363d;
+      --gdi-text-muted: #8b9ab0;
+    }
+    body { background: var(--gdi-bg); color: #e2e8f0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+    .admin-layout { display: flex; min-height: 100vh; }
+    .admin-sidebar { width: 260px; background: rgba(22, 27, 34, 0.95); border-right: 1px solid var(--gdi-border); backdrop-filter: blur(10px); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 14px 24px; color: var(--gdi-text-muted); text-decoration: none; transition: all 0.2s; font-weight: 500; border-left: 4px solid transparent; cursor: pointer; }
+    .sidebar-link:hover, .sidebar-link.active { color: #fff; background: rgba(20, 184, 166, 0.08); border-left-color: var(--gdi-primary); }
+    .admin-main { flex: 1; margin-left: 260px; padding: 40px; }
+    .card { background: var(--gdi-card-bg); border: 1px solid var(--gdi-border); border-radius: 12px; padding: 24px; margin-bottom: 24px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .stat-card { background: var(--gdi-card-bg); border: 1px solid var(--gdi-border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 16px; }
+    .stat-icon { font-size: 28px; color: var(--gdi-primary); background: rgba(20, 184, 166, 0.1); width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+    .form-control, .form-select { background: #0d1117 !important; border-color: var(--gdi-border) !important; color: #e2e8f0 !important; font-size: 13px; border-radius: 6px; padding: 8px 12px; }
+    .form-control:focus, .form-select:focus { border-color: var(--gdi-primary) !important; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15) !important; }
+    .btn { font-size: 13px; border-radius: 6px; padding: 8px 16px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--gdi-primary); border-color: var(--gdi-primary); color: #fff; }
+    .btn-primary:hover { background: var(--gdi-primary-hover); border-color: var(--gdi-primary-hover); color: #fff; }
+    .btn-danger { background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); color: #f87171; }
+    .btn-danger:hover { background: #f87171; color: #fff; }
+    .btn-ghost { background: transparent; border: 1px solid var(--gdi-border); color: var(--gdi-text-muted); }
     .btn-ghost:hover { background: #1e2736; color: #e2e8f0; }
-    table { width: 100%; }
-    th { color: #8b9ab0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid #2d3748; }
-    td { padding: 12px; border-bottom: 1px solid #1e2736; vertical-align: middle; }
-    .role-badge { font-size: 11px; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
-    .role-admin { background: rgba(248,113,113,.15); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
-    .role-customer { background: rgba(77,159,236,.15); color: #4d9fec; border: 1px solid rgba(77,159,236,.3); }
-    .role-legacy { background: rgba(139,154,176,.15); color: #8b9ab0; border: 1px solid rgba(139,154,176,.3); }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .top-bar a { color: #8b9ab0; text-decoration: none; font-size: 13px; }
-    .top-bar a:hover { color: #e2e8f0; }
-    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 13px; opacity: 0; transition: opacity .3s; z-index: 9999; }
+    table { width: 100%; border-collapse: collapse; }
+    th { color: var(--gdi-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; padding: 12px; text-align: left; border-bottom: 1px solid var(--gdi-border); font-weight: 600; }
+    td { padding: 14px 12px; border-bottom: 1px solid rgba(48, 54, 61, 0.4); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .role-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .role-admin { background: rgba(20, 184, 166, 0.15); color: var(--gdi-primary); border: 1px solid rgba(20, 184, 166, 0.3); }
+    .role-customer { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .role-legacy { background: rgba(139, 154, 176, 0.15); color: #8b9ab0; border: 1px solid rgba(139, 154, 176, 0.3); }
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: 8px; color: #fff; font-size: 13.5px; opacity: 0; transition: opacity .3s; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.3); display: block; pointer-events: none; }
     .toast.show { opacity: 1; }
-    .toast-success { background: #34d399; }
-    .toast-error { background: #f87171; }
-    .add-form { display: flex; gap: 8px; flex-wrap: wrap; }
-    .add-form .form-control { flex: 1; min-width: 200px; }
-    .add-form .form-select { width: 130px; flex-shrink: 0; }
-    .empty-row { text-align: center; color: #8b9ab0; padding: 32px !important; }
-    /* Toggle switches for Customer Access card */
-    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #2d3748; }
+    .toast-success { background: #14b8a6; }
+    .toast-error { background: #ef4444; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--gdi-border); }
     .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; margin-left: 20px; }
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #2d3748; border-radius: 24px; transition: background .2s; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #30363d; border-radius: 24px; transition: background .2s; }
     .toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #8b9ab0; border-radius: 50%; transition: transform .2s, background .2s; }
-    input:checked + .toggle-slider { background: #4d9fec; }
+    input:checked + .toggle-slider { background: var(--gdi-primary); }
     input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
-    /* Drive Folders card */
-    .roots-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-    .roots-table th { color: #8b9ab0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 6px 8px; border-bottom: 1px solid #2d3748; text-align: left; font-weight: 600; }
-    .roots-table td { padding: 8px 6px; border-bottom: 1px solid #1e2736; vertical-align: middle; }
-    .roots-table tr:last-child td { border-bottom: none; }
-    .root-num { color: #8b9ab0; font-size: 12px; width: 24px; text-align: center; padding-right: 4px; }
-    .root-name-col { width: 180px; }
-    .root-input { background: #0d1117 !important; border: 1px solid #2d3748 !important; color: #e2e8f0 !important; border-radius: 4px; padding: 5px 8px; font-size: 13px; width: 100%; box-sizing: border-box; }
-    .root-input:focus { outline: none; border-color: #4d9fec !important; }
+    .roots-table th { color: var(--gdi-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; padding: 8px; border-bottom: 1px solid var(--gdi-border); text-align: left; }
+    .roots-table td { padding: 10px 8px; }
+    .root-num { color: var(--gdi-text-muted); font-size: 12px; width: 30px; text-align: center; }
+    .root-name-col { width: 220px; }
+    .root-input { background: #0d1117 !important; border: 1px solid var(--gdi-border) !important; color: #e2e8f0 !important; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100%; box-sizing: border-box; }
+    .root-input:focus { outline: none; border-color: var(--gdi-primary) !important; }
     .root-id-input { font-family: monospace; font-size: 12px; }
-    .root-icon-btn { background: none; border: 1px solid #2d3748; border-radius: 4px; color: #8b9ab0; padding: 3px 7px; cursor: pointer; font-size: 13px; line-height: 1; margin-left: 3px; }
-    .root-icon-btn:hover:not(:disabled) { border-color: #4d9fec; color: #4d9fec; }
-    .root-del-btn:hover:not(:disabled) { border-color: #f87171 !important; color: #f87171 !important; }
+    .root-icon-btn { background: none; border: 1px solid var(--gdi-border); border-radius: 6px; color: var(--gdi-text-muted); padding: 5px 9px; cursor: pointer; font-size: 13px; line-height: 1; transition: all 0.2s; }
+    .root-icon-btn:hover:not(:disabled) { border-color: var(--gdi-primary); color: #fff; background: rgba(20, 184, 166, 0.1); }
+    .root-del-btn:hover:not(:disabled) { border-color: #ef4444 !important; color: #f87171 !important; background: rgba(239, 68, 68, 0.1) !important; }
     .root-icon-btn:disabled { opacity: .3; cursor: not-allowed; }
-    .roots-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 8px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="top-bar">
-      <div>
-        <h1><i class="bi bi-shield-lock"></i> Admin Panel</h1>
-        <div class="subtitle">Manage customer access — ${authConfig.siteName}</div>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="p-4 border-bottom border-secondary border-opacity-25">
+        <h5 class="m-0 text-white font-weight-bold"><i class="bi bi-shield-lock-fill text-teal"></i> GDI Admin</h5>
+        <small class="text-muted">v2.6.0 Dashboard</small>
       </div>
-      <div>
-        <a href="/"><i class="bi bi-arrow-left"></i> Back to portal</a>
-        &nbsp;&nbsp;
-        <a href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      <nav class="flex-grow-1 mt-3">
+        <a class="sidebar-link active" onclick="switchTab('overview')"><i class="bi bi-grid-1x2"></i> Overview</a>
+        <a class="sidebar-link" onclick="switchTab('drives')"><i class="bi bi-folder2-open"></i> Drive Folders</a>
+        <a class="sidebar-link" onclick="switchTab('users')"><i class="bi bi-people"></i> Users & Access</a>
+        <a class="sidebar-link" onclick="switchTab('settings')"><i class="bi bi-sliders"></i> Settings</a>
+        <a class="sidebar-link" onclick="switchTab('logs')"><i class="bi bi-receipt"></i> Audit Logs</a>
+      </nav>
+      <div class="p-3 border-top border-secondary border-opacity-25">
+        <a href="/" class="sidebar-link p-2"><i class="bi bi-arrow-left"></i> Return Portal</a>
       </div>
-    </div>
+    </aside>
 
-    <div class="card" id="card-roots">
-      <h5 style="margin-bottom:4px;"><i class="bi bi-folder2-open"></i> Drive Folders</h5>
-      <p style="color:#8b9ab0;font-size:12px;margin:0 0 14px;">Manage the Google Drive folder roots. Changes apply on the next visitor request — no redeploy needed.</p>
-      <table class="roots-table">
-        <thead><tr>
-          <th class="root-num">#</th>
-          <th class="root-name-col">Display Name</th>
-          <th>Google Drive Folder ID</th>
-          <th style="width:80px;"></th>
-        </tr></thead>
-        <tbody id="roots-tbody">
-          <tr><td colspan="4" class="empty-row"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
-        </tbody>
-      </table>
-      <div class="roots-footer">
-        <button class="btn btn-ghost" onclick="addRoot()"><i class="bi bi-plus-lg"></i> Add Drive</button>
-        <button class="btn btn-primary" id="btn-apply-roots" onclick="applyRoots()"><i class="bi bi-check-lg"></i> Apply All</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h5 style="margin-bottom:4px;"><i class="bi bi-sliders"></i> Customer Access</h5>
-      <p style="color:#8b9ab0;font-size:12px;margin:0 0 16px;">Controls what logged-in <strong style="color:#4d9fec;">customer</strong> accounts can do. Changes apply immediately — no redeploy needed.</p>
-      <div class="toggle-row">
-        <div>
-          <div style="font-weight:500;">Allow Streaming</div>
-          <div style="color:#8b9ab0;font-size:12px;margin-top:3px;">Customers can open the inline video / audio player</div>
+    <main class="admin-main">
+      <!-- 1. Overview Pane -->
+      <div id="pane-overview" class="tab-pane">
+        <h3 class="mb-1 text-white fw-bold">Overview</h3>
+        <p class="text-muted mb-4">Live portal telemetry and health check status</p>
+        
+        <div class="row g-4 mb-4">
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="bi bi-people"></i></div>
+              <div>
+                <small class="text-muted">Total Users</small>
+                <h3 class="m-0 fw-bold" id="stat-users">-</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+              <div>
+                <small class="text-muted">Active Roots</small>
+                <h3 class="m-0 fw-bold" id="stat-drives">-</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="bi bi-hdd-network"></i></div>
+              <div>
+                <small class="text-muted">Telemetry Status</small>
+                <h3 class="m-0 fw-bold fs-5 text-success" id="stat-telemetry">Healthy</h3>
+              </div>
+            </div>
+          </div>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="chk-stream" onchange="saveConfig('stream')">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="toggle-row">
-        <div>
-          <div style="font-weight:500;">Allow Download</div>
-          <div style="color:#8b9ab0;font-size:12px;margin-top:3px;">Customers can download files (streaming is also enabled)</div>
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <h5 class="mb-3 text-white fw-bold"><i class="bi bi-activity text-teal"></i> Platform Health</h5>
+              <div class="toggle-row">
+                <div>
+                  <div class="fw-semibold">Cloudflare KV Store</div>
+                  <small class="text-muted">Configuration persistence health</small>
+                </div>
+                <div id="status-kv"><span class="badge bg-secondary">Checking...</span></div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="fw-semibold">Google Drive API</div>
+                  <small class="text-muted">Token authentication status</small>
+                </div>
+                <div id="status-api"><span class="badge bg-secondary">Checking...</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <h5 class="mb-3 text-white fw-bold"><i class="bi bi-clock-history"></i> Quick Log Feed</h5>
+              <div style="max-height: 180px; overflow-y: auto;" id="quick-logs">
+                <p class="text-muted text-center py-4">No recent activity</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="chk-download" onchange="saveConfig('download')">
-          <span class="toggle-slider"></span>
-        </label>
       </div>
-    </div>
 
-    <div class="card">
-      <h5 style="margin-bottom: 12px;"><i class="bi bi-person-plus"></i> Add user</h5>
-      <form class="add-form" id="add-form">
-        <input type="email" class="form-control" id="new-email" placeholder="customer@example.com" required>
-        <select class="form-select" id="new-role">
-          <option value="customer">customer</option>
-          <option value="admin">admin</option>
-        </select>
-        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add</button>
-      </form>
-    </div>
+      <!-- 2. Drives Pane -->
+      <div id="pane-drives" class="tab-pane d-none">
+        <h3 class="mb-1 text-white fw-bold">Drive Folders</h3>
+        <p class="text-muted mb-4">Manage Google Drive root locations. Probing verifies access immediately.</p>
+        <div class="card">
+          <table class="roots-table">
+            <thead>
+              <tr>
+                <th class="root-num">#</th>
+                <th class="root-name-col">Display Name</th>
+                <th>Google Drive Folder ID</th>
+                <th style="width: 150px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="roots-tbody">
+              <tr><td colspan="4" class="empty-row text-center py-5"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
+            </tbody>
+          </table>
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <button class="btn btn-ghost" onclick="addRoot()"><i class="bi bi-plus-lg"></i> Add Drive</button>
+            <button class="btn btn-primary" id="btn-apply-roots" onclick="applyRoots()"><i class="bi bi-check-lg"></i> Apply All Changes</button>
+          </div>
+        </div>
+      </div>
 
-    <div class="card">
-      <h5 style="margin-bottom: 12px;"><i class="bi bi-people"></i> Users <span id="user-count" style="color:#8b9ab0;font-weight:normal;font-size:13px;"></span></h5>
-      <table>
-        <thead>
-          <tr><th>Email</th><th>Role</th><th style="text-align:right;">Actions</th></tr>
-        </thead>
-        <tbody id="user-table">
-          <tr><td colspan="3" class="empty-row"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
-        </tbody>
-      </table>
-    </div>
+      <!-- 3. Users Pane -->
+      <div id="pane-users" class="tab-pane d-none">
+        <h3 class="mb-1 text-white fw-bold">Users & Access</h3>
+        <p class="text-muted mb-4">Authorize users, modify roles, or force terminate sessions.</p>
+        
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="card">
+              <h5 class="mb-3 text-white fw-bold"><i class="bi bi-person-plus"></i> Add New User</h5>
+              <form id="add-form">
+                <div class="mb-3">
+                  <label class="form-label text-muted">Email address</label>
+                  <input type="email" class="form-control" id="new-email" placeholder="user@domain.com" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label text-muted">Account Role</label>
+                  <select class="form-select" id="new-role">
+                    <option value="customer">customer</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus-fill"></i> Add Account</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <div class="card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0 text-white fw-bold">User Accounts <span id="user-count" class="text-muted fw-normal"></span></h5>
+                <div style="max-width: 250px;">
+                  <input type="text" id="user-search-input" class="form-control py-1" placeholder="Search email..." oninput="filterUserTable()">
+                </div>
+              </div>
+              <div style="max-height: 400px; overflow-y: auto;">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th style="text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-table">
+                    <tr><td colspan="3" class="empty-row text-center py-5"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Settings Pane -->
+      <div id="pane-settings" class="tab-pane d-none">
+        <h3 class="mb-1 text-white fw-bold">Settings</h3>
+        <p class="text-muted mb-4">Portal options, security whitelists, and backup controls.</p>
+        
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <h5 class="mb-3 text-white fw-bold"><i class="bi bi-shield-check"></i> Customer Access Control</h5>
+              <div class="toggle-row">
+                <div>
+                  <div class="fw-semibold">Allow Streaming</div>
+                  <small class="text-muted">Enable inline audio/video player</small>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="chk-stream" onchange="saveConfig('stream')">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="fw-semibold">Allow Direct Downloads</div>
+                  <small class="text-muted">Allow download button triggers</small>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="chk-download" onchange="saveConfig('download')">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="card h-100">
+              <h5 class="mb-3 text-white fw-bold"><i class="bi bi-file-earmark-arrow-down"></i> Backup & Restore</h5>
+              <p class="text-muted small">Export all configurations (drives and settings) as a backup JSON file or import a previous file to restore.</p>
+              <div class="d-flex gap-2 mt-4">
+                <button class="btn btn-ghost" onclick="exportConfig()"><i class="bi bi-download"></i> Backup Config</button>
+                <label class="btn btn-ghost m-0" style="cursor: pointer;">
+                  <i class="bi bi-upload"></i> Restore Config
+                  <input type="file" id="import-file" style="display:none;" onchange="importConfig(this)">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Audit Logs Pane -->
+      <div id="pane-logs" class="tab-pane d-none">
+        <h3 class="mb-1 text-white fw-bold">Audit Logs</h3>
+        <p class="text-muted mb-4">Security, authentication, and directory events</p>
+        <div class="card">
+          <div style="max-height: 500px; overflow-y: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 180px;">Timestamp</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <tr><td colspan="4" class="empty-row text-center py-5"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -665,6 +818,52 @@ const admin_html = `<!DOCTYPE html>
       t.textContent = msg;
       t.className = 'toast show toast-' + (type || 'success');
       setTimeout(() => t.className = 'toast toast-' + (type || 'success'), 2500);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      const activeLink = Array.from(document.querySelectorAll('.sidebar-link')).find(l => l.getAttribute('onclick')?.includes(tabId));
+      if (activeLink) activeLink.classList.add('active');
+
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('d-none'));
+      const target = document.getElementById('pane-' + tabId);
+      if (target) target.classList.remove('d-none');
+
+      if (tabId === 'overview') { loadStats(); }
+      if (tabId === 'logs') { loadAuditLogs(); }
+    }
+
+    async function loadStats() {
+      try {
+        const resUsers = await fetch('/admin/api/users');
+        const users = await resUsers.json();
+        const resDrives = await fetch('/admin/api/roots');
+        const drives = await resDrives.json();
+
+        document.getElementById('stat-users').textContent = users.length;
+        document.getElementById('stat-drives').textContent = drives.length;
+        
+        document.getElementById('status-kv').innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Operational</span>';
+        document.getElementById('status-api').innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Operational</span>';
+        
+        // Also load a few logs for the quick feed
+        const resLogs = await fetch('/admin/api/logs');
+        const logs = await resLogs.json();
+        const logsFeed = document.getElementById('quick-logs');
+        if (logs.length > 0) {
+          logsFeed.innerHTML = logs.slice(0, 4).map(l => 
+            '<div class="py-2 border-bottom border-secondary border-opacity-25 small">' +
+              '<span class="text-teal fw-bold">[' + l.action + ']</span> ' + l.details +
+              '<div class="text-muted" style="font-size: 11px;">' + new Date(l.timestamp).toLocaleTimeString() + '</div>' +
+            '</div>'
+          ).join('');
+        } else {
+          logsFeed.innerHTML = '<p class="text-muted text-center py-4">No recent activity</p>';
+        }
+      } catch (e) {
+        document.getElementById('status-kv').innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+        document.getElementById('status-api').innerHTML = '<span class="badge bg-danger">Error</span>';
+      }
     }
 
     async function loadUsers() {
@@ -685,6 +884,9 @@ const admin_html = `<!DOCTYPE html>
             .filter(r => r !== u.role)
             .map(r => '<option value="' + r + '">' + r + '</option>')
             .join('');
+          
+          const revokeButton = isSelf ? '' : '<button class="btn btn-ghost btn-sm ms-1" onclick="revokeSessions(\'' + u.email + '\')" title="Revoke all active sessions"><i class="bi bi-shield-x text-warning"></i> Revoke</button>';
+
           return '<tr>' +
             '<td>' + (isSelf ? u.email + ' <span style="color:#8b9ab0;font-size:11px;">(you)</span>' : u.email) + '</td>' +
             '<td><span class="role-badge ' + roleClass + '">' + u.role + '</span></td>' +
@@ -692,12 +894,41 @@ const admin_html = `<!DOCTYPE html>
               (u.role === 'legacy'
                 ? '<span style="color:#8b9ab0;font-size:11px;">password login (no role change)</span>'
                 : '<select class="form-select form-select-sm d-inline-block" style="width:auto;" onchange="changeRole(\\'' + u.email + '\\', this.value)"><option value="' + u.role + '" selected>' + u.role + '</option>' + roleOptions + '</select>') +
-              (isSelf ? '' : ' <button class="btn btn-danger btn-sm ms-2" onclick="removeUser(\\'' + u.email + '\\')"><i class="bi bi-trash"></i></button>') +
+              revokeButton +
+              (isSelf ? '' : ' <button class="btn btn-danger btn-sm ms-1" onclick="removeUser(\\'' + u.email + '\\')" title="Delete Account"><i class="bi bi-trash"></i></button>') +
             '</td>' +
           '</tr>';
         }).join('');
       } catch (e) {
         showToast('Load failed: ' + e.message, 'error');
+      }
+    }
+
+    function filterUserTable() {
+      const q = document.getElementById('user-search-input').value.toLowerCase().trim();
+      document.querySelectorAll('#user-table tr').forEach(row => {
+        const email = row.cells[0]?.textContent.toLowerCase() || '';
+        if (row.querySelector('.empty-row')) return;
+        row.style.display = !q || email.includes(q) ? '' : 'none';
+      });
+    }
+
+    async function revokeSessions(email) {
+      if (!confirm('Force logout all active sessions for ' + email + '?')) return;
+      try {
+        const r = await fetch('/admin/api/revoke-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await r.json();
+        if (r.ok && data.ok) {
+          showToast('Sessions revoked successfully.');
+        } else {
+          showToast(data.message || 'Revocation failed', 'error');
+        }
+      } catch (e) {
+        showToast('Revocation failed: ' + e.message, 'error');
       }
     }
 
@@ -781,6 +1012,87 @@ const admin_html = `<!DOCTYPE html>
       } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
     }
 
+    function exportConfig() {
+      const backupData = {
+        roots: _roots,
+        config: {
+          customer_can_stream: document.getElementById('chk-stream').checked,
+          customer_can_download: document.getElementById('chk-download').checked
+        }
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "gdi-admin-backup.json");
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      showToast('Config backup file generated.');
+    }
+
+    async function importConfig(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.roots || !data.config) {
+            throw new Error('Invalid backup file structure');
+          }
+          if (!confirm('Apply roots and configs from backup file? Current drives will be replaced.')) return;
+          
+          // Save roots
+          var r1 = await fetch('/admin/api/roots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data.roots)
+          });
+          
+          // Save toggles config
+          var r2 = await fetch('/admin/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data.config)
+          });
+          
+          if (r1.ok && r2.ok) {
+            showToast('Backup restored successfully!');
+            loadRoots();
+            loadConfig();
+          } else {
+            showToast('Failed to apply backup', 'error');
+          }
+        } catch(err) {
+          showToast('Import failed: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+      input.value = ''; // clear input
+    }
+
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('logs-tbody');
+      try {
+        const r = await fetch('/admin/api/logs');
+        const logs = await r.json();
+        if (!logs.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-row text-center text-muted">No audit events logged yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = logs.map(l => 
+          '<tr>' +
+            '<td class="text-muted small">' + new Date(l.timestamp).toLocaleString() + '</td>' +
+            '<td><span class="badge bg-secondary">' + l.action + '</span></td>' +
+            '<td>' + l.details + '</td>' +
+            '<td><code class="text-info">' + l.ip + '</code></td>' +
+          '</tr>'
+        ).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-row text-danger">Failed to load audit logs.</td></tr>';
+      }
+    }
+
     // ── Drive Folder Manager ──────────────────────────────────────────────────
     var _roots = [];
 
@@ -815,9 +1127,12 @@ const admin_html = `<!DOCTYPE html>
             ' oninput="_roots[' + idx + '].id=this.value.trim()"' +
             ' placeholder="Google Drive folder ID" spellcheck="false" autocomplete="off"></td>' +
           '<td style="text-align:right;white-space:nowrap;">' +
-            '<button class="root-icon-btn" title="Open in Google Drive"' +
-              ' onclick="if(_roots[' + idx + '].id)window.open(' + "'https://drive.google.com/drive/folders/'+_roots[" + idx + "].id,'_blank')" + '">' +
-              '<i class="bi bi-box-arrow-up-right"></i></button>' +
+            '<button class="root-icon-btn me-1" id="probe-btn-' + idx + '" title="Validate Connection" onclick="probeDrive(' + idx + ')">' +
+              '<i class="bi bi-shield-check"></i></button>' +
+            '<button class="root-icon-btn me-1" title="Move Up" onclick="moveRootUp(' + idx + ')"' + (idx === 0 ? ' disabled' : '') + '>' +
+              '<i class="bi bi-arrow-up"></i></button>' +
+            '<button class="root-icon-btn me-1" title="Move Down" onclick="moveRootDown(' + idx + ')"' + (idx === _roots.length - 1 ? ' disabled' : '') + '>' +
+              '<i class="bi bi-arrow-down"></i></button>' +
             '<button class="root-icon-btn root-del-btn" title="Remove"' + disabledAttr +
               ' onclick="removeRoot(' + idx + ')">' +
               '<i class="bi bi-trash"></i></button>' +
@@ -825,6 +1140,56 @@ const admin_html = `<!DOCTYPE html>
         '</tr>';
       }
       tbody.innerHTML = html || '<tr><td colspan="4" class="empty-row">No drives configured.</td></tr>';
+    }
+
+    async function probeDrive(idx) {
+      const idVal = _roots[idx].id;
+      if (!idVal) {
+        showToast('Please enter a Google Drive folder ID', 'error');
+        return;
+      }
+      const btn = document.getElementById('probe-btn-' + idx);
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+      try {
+        const r = await fetch('/admin/api/probe-drive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: idVal })
+        });
+        const data = await r.json();
+        if (r.ok && data.ok) {
+          showToast('Connection verified successfully!');
+          btn.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+        } else {
+          showToast(data.message || 'Connection failed', 'error');
+          btn.innerHTML = '<i class="bi bi-exclamation-circle-fill text-danger"></i>';
+        }
+      } catch (e) {
+        showToast('Validation request failed: ' + e.message, 'error');
+        btn.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+      }
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }, 3000);
+    }
+
+    function moveRootUp(idx) {
+      if (idx === 0) return;
+      const temp = _roots[idx];
+      _roots[idx] = _roots[idx - 1];
+      _roots[idx - 1] = temp;
+      renderRoots();
+    }
+
+    function moveRootDown(idx) {
+      if (idx === _roots.length - 1) return;
+      const temp = _roots[idx];
+      _roots[idx] = _roots[idx + 1];
+      _roots[idx + 1] = temp;
+      renderRoots();
     }
 
     function addRoot() {
@@ -874,6 +1239,7 @@ const admin_html = `<!DOCTYPE html>
       btn.innerHTML = '<i class="bi bi-check-lg"></i> Apply All';
     }
 
+    loadStats();
     loadUsers();
     loadConfig();
     loadRoots();
@@ -1162,6 +1528,17 @@ async function verifySessionToken(token) {
     console.error('Session HMAC signature verification failed!');
     return null;
   }
+  const parts = sessionData.split('|');
+  if (parts.length > 0) {
+    try {
+      const email = await decryptString(parts[0]);
+      const isRevoked = await ENV.get('gdi_revoked_' + email);
+      if (isRevoked === 'true') {
+        console.warn('Session is revoked for user:', email);
+        return null;
+      }
+    } catch (_) {}
+  }
   return sessionData;
 }
 
@@ -1182,6 +1559,22 @@ async function rateLimit(ip, endpoint, limit = 5, duration = 60) {
   } catch (_) {
     return true;
   }
+}
+
+async function logAuditEvent(action, details, ip) {
+  const key = 'gdi_audit_logs';
+  try {
+    const raw = await ENV.get(key);
+    const logs = raw ? JSON.parse(raw) : [];
+    logs.unshift({
+      timestamp: new Date().toISOString(),
+      action,
+      details,
+      ip: ip || 'unknown'
+    });
+    if (logs.length > 100) logs.pop();
+    await ENV.put(key, JSON.stringify(logs));
+  } catch (_) {}
 }
 
 async function checkintegrity(expectedHex, actualHex) {
@@ -1433,6 +1826,7 @@ async function handleRequest(request, event) {
         if (authConfig.ip_changed_action && user_ip) {
           await ENV.put(username + '_ip', user_ip);
         }
+        await logAuditEvent('LOGIN_SUCCESS', `User ${username} (${kv_key || 'customer'}) logged in`, user_ip);
         const response = new Response('', {
           status: 302,
           headers: {
@@ -1774,7 +2168,9 @@ async function handleRequest(request, event) {
       for (const k of list.keys) {
         if (k.name.endsWith('_session') || k.name.endsWith('_ip')
             || k.name === '__gdi_access_config__'
-            || k.name === '__gdi_roots__') continue;
+            || k.name === '__gdi_roots__'
+            || k.name.startsWith('gdi_')
+            || k.name.startsWith('rl_')) continue;
         const value = await ENV.get(k.name);
         let role;
         if (value === 'admin' || value === 'customer') role = value;
@@ -1782,6 +2178,51 @@ async function handleRequest(request, event) {
         users.push({ email: k.name, role });
       }
       return new Response(JSON.stringify(users), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === '/admin/api/probe-drive' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const folderId = body.id;
+        const testReq = await gd.list(folderId, 1);
+        const ok = testReq && testReq.files !== undefined;
+        return new Response(JSON.stringify({ ok, message: ok ? 'Connection successful' : 'Unauthorized/Not Found' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, message: err.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      }
+    }
+
+    if (path === '/admin/api/logs' && request.method === 'GET') {
+      const raw = await ENV.get('gdi_audit_logs');
+      return new Response(raw || '[]', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
+    }
+
+    if (path === '/admin/api/revoke-session' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const email = body.email;
+        const revokedKey = 'gdi_revoked_' + email;
+        await ENV.put(revokedKey, 'true', { expirationTtl: 86400 * authConfig.login_days });
+        await logAuditEvent('SESSION_REVOKE', `Revoked all active sessions for ${email}`, user_ip);
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, message: err.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      }
     }
 
     if (path === '/admin/api/users' && request.method === 'POST') {
@@ -1863,6 +2304,7 @@ async function handleRequest(request, event) {
       const body = await request.json();
       const config = { customer_can_stream: !!body.customer_can_stream, customer_can_download: !!body.customer_can_download };
       await ENV.put('__gdi_access_config__', JSON.stringify(config));
+      await logAuditEvent('CONFIG_UPDATE', `Streaming: ${config.customer_can_stream ? 'ON' : 'OFF'}, Downloads: ${config.customer_can_download ? 'ON' : 'OFF'}`, user_ip);
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
