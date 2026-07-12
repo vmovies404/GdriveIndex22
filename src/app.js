@@ -558,6 +558,11 @@ function list(path, id = '', fallback = false) {
       <span class="gdi-col-acts"></span>
     </div>
     <div id="list"></div>
+    <div id="folder-pagination" style="display:none;padding:8px 12px;border-top:1px solid var(--gdi-border);background:var(--gdi-surface-2);align-items:center;justify-content:space-between;gap:8px;">
+      <button id="folder-prev" class="gdi-btn gdi-btn-ghost gdi-btn-icon" disabled><i class="bi bi-chevron-left"></i> Prev</button>
+      <span id="folder-page-info" style="font-size:12px;color:var(--gdi-text-muted);"></span>
+      <button id="folder-next" class="gdi-btn gdi-btn-ghost gdi-btn-icon" disabled>Next <i class="bi bi-chevron-right"></i></button>
+    </div>
     <div id="count" class="gdi-count-bar"></div>
   </div>
   <div id="readme_md" class="gdi-panel gdi-markdown" style="display:none;"></div>
@@ -567,58 +572,88 @@ function list(path, id = '', fallback = false) {
 
     const password = localStorage.getItem('password' + path);
 
-    $('#list').html(`<div class="gdi-spinner-wrap" id="spinner"><div class="gdi-spinner"></div></div>`);
-    $('#readme_md').hide().html('');
-    $('#head_md').hide().html('');
+    window.folder_page_state = {
+        curPage: 1,
+        pageTokens: [''],
+        nextPageToken: null,
+        password: password
+    };
+
+    function loadFolderPage(page) {
+        window.folder_page_state.curPage = page;
+        $('#list').html(`<div class="gdi-spinner-wrap" id="spinner"><div class="gdi-spinner"></div></div>`);
+        $('#readme_md').hide().html('');
+        $('#head_md').hide().html('');
+        $('#folder-pagination').hide();
+
+        const requestParams = {
+            password: window.folder_page_state.password,
+            page_token: window.folder_page_state.pageTokens[page - 1] || '',
+            page_index: 0
+        };
+
+        if (fallback) {
+            requestParams.id = id;
+            requestListPath(path, requestParams, handleSuccessResult, null, 3, true);
+        } else {
+            requestListPath(path, requestParams, handleSuccessResult, null);
+        }
+    }
 
     function handleSuccessResult(res, path, prevReqParams) {
-        $('#list')
-            .data('nextPageToken', res['nextPageToken'])
-            .data('curPageIndex', res['curPageIndex']);
         $('#spinner').remove();
 
-        if (res['nextPageToken'] === null) {
-            $(window).off('scroll');
-            window.scroll_status.event_bound = false;
-            window.scroll_status.loading_lock = false;
-            if (fallback) append_files_to_fallback_list(path, res['data']['files']);
-            else          append_files_to_list(path, res['data']['files']);
-        } else {
-            if (fallback) append_files_to_fallback_list(path, res['data']['files']);
-            else          append_files_to_list(path, res['data']['files']);
-            if (window.scroll_status.event_bound !== true) {
-                $(window).on('scroll', function() {
-                    if ($(this).scrollTop() + $(this).height() > getDocumentHeight() - (Os.isMobile ? 130 : 80)) {
-                        if (window.scroll_status.loading_lock === true) return;
-                        window.scroll_status.loading_lock = true;
-                        $(`<div id="spinner" class="gdi-spinner-wrap"><div class="gdi-spinner"></div></div>`).insertBefore('#readme_md');
-                        const $list = $('#list');
-                        if (fallback) {
-                            requestListPath(path, {
-                                id, password: prevReqParams['password'],
-                                page_token: $list.data('nextPageToken'),
-                                page_index: $list.data('curPageIndex') + 1
-                            }, handleSuccessResult, null, 5, true);
-                        } else {
-                            requestListPath(path, {
-                                password: prevReqParams['password'],
-                                page_token: $list.data('nextPageToken'),
-                                page_index: $list.data('curPageIndex') + 1
-                            }, handleSuccessResult, null);
-                        }
-                    }
-                });
-                window.scroll_status.event_bound = true;
-            }
+        const files = res['data'] && res['data']['files'] || [];
+        
+        $('#list').data('curPageIndex', '0').data('nextPageToken', res['nextPageToken']);
+
+        if (fallback) append_files_to_fallback_list(path, files);
+        else          append_files_to_list(path, files);
+
+        const nextPageToken = res['nextPageToken'] || null;
+        window.folder_page_state.nextPageToken = nextPageToken;
+        const curPage = window.folder_page_state.curPage;
+
+        if (nextPageToken) {
+            window.folder_page_state.pageTokens[curPage] = nextPageToken;
         }
-        if (window.scroll_status.loading_lock === true) window.scroll_status.loading_lock = false;
+
+        const pagEl = document.getElementById('folder-pagination');
+        const infoEl = document.getElementById('folder-page-info');
+        const prevBtn = document.getElementById('folder-prev');
+        const nextBtn = document.getElementById('folder-next');
+
+        if (pagEl) {
+            pagEl.style.display = (nextPageToken || curPage > 1) ? 'flex' : 'none';
+        }
+        if (infoEl) {
+            infoEl.textContent = `Page ${curPage} · ${files.length} item${files.length !== 1 ? 's' : ''} on this page`;
+        }
+        if (prevBtn) prevBtn.disabled = curPage <= 1;
+        if (nextBtn) nextBtn.disabled = !nextPageToken;
+
+        $(window).off('scroll');
+        window.scroll_status.event_bound = false;
+        window.scroll_status.loading_lock = false;
     }
 
-    if (fallback) {
-        requestListPath(path, { id, password }, handleSuccessResult, null, 3, true);
-    } else {
-        requestListPath(path, { password }, handleSuccessResult, null);
-    }
+    $(document).off('click', '#folder-prev').on('click', '#folder-prev', function() {
+        const cur = window.folder_page_state.curPage;
+        if (cur > 1) {
+            loadFolderPage(cur - 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    $(document).off('click', '#folder-next').on('click', '#folder-next', function() {
+        const cur = window.folder_page_state.curPage;
+        if (window.folder_page_state.nextPageToken) {
+            loadFolderPage(cur + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    loadFolderPage(1);
 
     // Bulk copy handler
     const copyBtn = document.getElementById('handle-multiple-items-copy');
