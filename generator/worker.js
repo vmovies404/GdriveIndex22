@@ -189,7 +189,7 @@ async function handleGenerate(request) {
       refresh_token: isSA ? '' : refresh_token,
       service_account: isSA,
       service_account_json: '__RANDOMSA__',
-      files_list_page_size: 100,
+      files_list_page_size: 25,
       search_result_list_page_size: 100,
       enable_cors_file_down: false,
       enable_password_file_verify: false,

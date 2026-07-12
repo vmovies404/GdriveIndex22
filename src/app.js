@@ -589,7 +589,7 @@ function list(path, id = '', fallback = false) {
         const requestParams = {
             password: window.folder_page_state.password,
             page_token: window.folder_page_state.pageTokens[page - 1] || '',
-            page_index: 0
+            page_index: page - 1
         };
 
         if (fallback) {

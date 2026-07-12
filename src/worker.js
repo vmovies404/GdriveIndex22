@@ -21,7 +21,7 @@ const authConfig = {
   "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
   "service_account": false, // true if you're using Service Account instead of user account
   "service_account_json": randomserviceaccount, // don't touch this one
-  "files_list_page_size": 100,
+  "files_list_page_size": 25,
   "search_result_list_page_size": 100,
   "enable_cors_file_down": false,
   "enable_password_file_verify": false, // support for .password file not working right now
