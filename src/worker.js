@@ -78,18 +78,14 @@ async function getSecret(name) {
 }
 
 async function getCryptoKey() {
-  if (crypto_base_key === "YOUR_CRYPTO_KEY") {
-    const v = await getSecret("CRYPTO_BASE_KEY");
-    if (v) crypto_base_key = v;
-  }
+  const v = await getSecret("CRYPTO_BASE_KEY");
+  if (v) return v;
   return crypto_base_key;
 }
 
 async function getHmacKey() {
-  if (hmac_base_key === "YOUR_HMAC_KEY") {
-    const v = await getSecret("HMAC_BASE_KEY");
-    if (v) hmac_base_key = v;
-  }
+  const v = await getSecret("HMAC_BASE_KEY");
+  if (v) return v;
   return hmac_base_key;
 }
 
@@ -1831,7 +1827,7 @@ async function handleRequest(request, event) {
           status: 302,
           headers: {
             'Location': '/',
-            'Set-Cookie': `session=${signedSession}; path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${86400 * authConfig.login_days}`,
+            'Set-Cookie': `session=${signedSession}; path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${86400 * authConfig.login_days}`,
           }
         });
         return response;
