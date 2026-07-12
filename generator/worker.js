@@ -1,4 +1,4 @@
-// GDI Generator Worker v2.5.9
+// GDI Generator Worker v2.6.0
 // Generates a configured worker.js for Google Drive Index
 
 const WORKER_JS_URL = 'https://gitlab.com/GoogleDriveIndex/Google-Drive-Index/-/raw/master/src/worker.js?ref_type=heads';
@@ -213,7 +213,7 @@ async function handleGenerate(request) {
       roots,
     };
 
-    const GDI_VERSION = '2.5.9'; // auto-updated by build script
+    const GDI_VERSION = '2.6.0'; // auto-updated by build script
     const cdnBase = 'https://cdn.jsdelivr.net/npm/@googledrive/index@' + GDI_VERSION;
 
     // Build uiConfig object from form fields
@@ -309,7 +309,7 @@ async function servePage(request) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GDI Generator — Google Drive Index v2.5.9</title>
+  <title>GDI Generator — Google Drive Index v2.6.0</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
@@ -385,7 +385,7 @@ async function servePage(request) {
   <div class="text-center mb-4">
     <h4 class="fw-bold mb-1"><i class="bi bi-gear-fill me-2" style="color:var(--accent)"></i>Google Drive Index — Generator</h4>
     <p style="font-size:13px;color:var(--muted);">Fill in the form below to generate your ready-to-deploy <code>worker.js</code>.</p>
-    <span style="font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">v2.5.9</span>
+    <span style="font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">v2.6.0</span>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════

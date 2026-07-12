@@ -13,7 +13,7 @@ const domains_for_dl = ['']; // add multiple cloudflare addresses to balance the
 const domain_for_dl = domains_for_dl[Math.floor(Math.random() * domains_for_dl.length)]; // DO NOT TOUCH THIS
 const blocked_region = ['']; // add regional codes seperated by comma, eg. ['IN', 'US', 'PK']
 const blocked_asn = []; // add ASN numbers from http://www.bgplookingglass.com/list-of-autonomous-system-numbers, eg. [16509, 12345]
-const CDN_VERSION = '2.5.9'; // auto-updated by npm run build
+const CDN_VERSION = '2.6.0'; // auto-updated by npm run build
 const authConfig = {
   "siteName": "Elevate Digital Drive", // Website name
   "client_id": "YOUR_CLIENT_ID", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
@@ -182,10 +182,10 @@ let app_js_file;
 if (environment === 'local') {
   app_js_file = 'http://127.0.0.1:5500/src/app.js';
 } else {
-  app_js_file = cdn_base + '/src/app.min.js';
+  app_js_file = cdn_base + '/src/app.min.js?v=' + CDN_VERSION;
 }
-const css_file = environment === 'local' ? 'http://127.0.0.1:5500/assets/gdi.css' : cdn_base + '/assets/gdi.min.css';
-const homepage_js_file = environment === 'local' ? 'http://127.0.0.1:5500/assets/homepage.js' : cdn_base + '/assets/homepage.min.js';
+const css_file = environment === 'local' ? 'http://127.0.0.1:5500/assets/gdi.css' : cdn_base + '/assets/gdi.min.css?v=' + CDN_VERSION;
+const homepage_js_file = environment === 'local' ? 'http://127.0.0.1:5500/assets/homepage.js' : cdn_base + '/assets/homepage.min.js?v=' + CDN_VERSION;
 
 // Safely embed any object as JSON inside a <script> tag.
 // JSON.stringify alone does not escape "</script>", which allows an attacker

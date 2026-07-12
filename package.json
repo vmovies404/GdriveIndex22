@@ -1,6 +1,6 @@
 {
   "name": "@googledrive/index",
-  "version": "2.5.9",
+  "version": "2.6.0",
   "description": "Google Drive Index - A serverless Google Drive directory listing on Cloudflare Workers",
   "private": false,
   "main": "src/worker.js",
