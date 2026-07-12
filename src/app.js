@@ -251,6 +251,127 @@ function toggleTheme() {
     applyTheme(saved);
 }());
 
+/**
+ * Render a modern spinner inside target selector and return a progress updater function.
+ */
+function showModernSpinner(selector) {
+    const $target = $(selector);
+    $target.html(`
+        <div class="gdi-spinner-wrap" id="spinner">
+          <div class="gdi-modern-spinner">
+            <svg class="spinner-svg" viewBox="0 0 50 50">
+              <circle class="spinner-bg" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+              <circle class="spinner-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-dasharray="125.66" stroke-dashoffset="125.66"></circle>
+            </svg>
+            <div class="spinner-percentage" id="spinner-percent">0%</div>
+          </div>
+        </div>
+    `);
+    
+    return function updateProgress(percent) {
+        const $percentText = $target.find('#spinner-percent');
+        const $circle = $target.find('.spinner-progress');
+        if ($percentText.length) {
+            $percentText.text(percent + '%');
+        }
+        if ($circle.length) {
+            const circumference = 2 * Math.PI * 20; // ~125.66
+            const offset = circumference - (percent / 100) * circumference;
+            $circle.css('stroke-dashoffset', offset);
+        }
+    };
+}
+
+/**
+ * Fetch helper that reads stream body to track loading progress.
+ */
+async function fetchWithProgress(url, options, onProgress) {
+    const response = await fetch(url, options);
+    if (!response.ok) return response;
+    
+    const contentLength = response.headers.get('content-length');
+    if (!contentLength) {
+        const reader = response.body.getReader();
+        let receivedLength = 0;
+        const chunks = [];
+        let done = false;
+        
+        let simulatedPercent = 0;
+        const interval = setInterval(() => {
+            if (done) {
+                clearInterval(interval);
+                return;
+            }
+            if (simulatedPercent < 90) {
+                simulatedPercent += Math.floor(Math.random() * 8) + 4;
+                if (simulatedPercent > 90) simulatedPercent = 90;
+                onProgress(simulatedPercent);
+            }
+        }, 120);
+
+        try {
+            for (;;) {
+                const { done: isDone, value } = await reader.read();
+                if (isDone) {
+                    done = true;
+                    clearInterval(interval);
+                    onProgress(100);
+                    break;
+                }
+                chunks.push(value);
+                receivedLength += value.length;
+            }
+        } catch (e) {
+            clearInterval(interval);
+            throw e;
+        }
+        
+        let chunksAll = new Uint8Array(receivedLength);
+        let position = 0;
+        for (let chunk of chunks) {
+            chunksAll.set(chunk, position);
+            position += chunk.length;
+        }
+        
+        const decoded = new TextDecoder("utf-8").decode(chunksAll);
+        return new Response(decoded, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+        });
+    }
+
+    const total = parseInt(contentLength, 10);
+    const reader = response.body.getReader();
+    let loaded = 0;
+    const chunks = [];
+
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) {
+            onProgress(100);
+            break;
+        }
+        chunks.push(value);
+        loaded += value.length;
+        onProgress(Math.round((loaded / total) * 100));
+    }
+
+    let chunksAll = new Uint8Array(loaded);
+    let position = 0;
+    for (let chunk of chunks) {
+        chunksAll.set(chunk, position);
+        position += chunk.length;
+    }
+
+    const decoded = new TextDecoder("utf-8").decode(chunksAll);
+    return new Response(decoded, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+    });
+}
+
 // Sleep for retry logic (non-blocking, promise-based)
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -260,6 +381,20 @@ function sleep(ms) {
 // INIT — builds the page skeleton into <body>
 // ============================================================================
 function init() {
+    const appVersion = window.UI?.version || 'unknown';
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && key.startsWith('gdi_cache_') && !key.startsWith(`gdi_cache_${appVersion}_`)) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+    } catch (_) {
+        // ignore
+    }
+
     document.siteName = $('title').html();
     const html = `
 <div id="nav"></div>
@@ -398,7 +533,8 @@ function requestListPath(path, params, resultCallback, _unused, retries = 3, fal
     };
 
     // Client-Side Session Cache check
-    const cacheKey = `gdi_cache_${path}_${requestData.id}_${requestData.page_token}_${requestData.page_index}_${requestData.password}`;
+    const appVersion = window.UI?.version || 'unknown';
+    const cacheKey = `gdi_cache_${appVersion}_${path}_${requestData.id}_${requestData.page_token}_${requestData.page_index}_${requestData.password}`;
     try {
         const cachedData = sessionStorage.getItem(cacheKey);
         if (cachedData) {
@@ -420,13 +556,18 @@ function requestListPath(path, params, resultCallback, _unused, retries = 3, fal
     $('#update').html(`<div class="gdi-alert gdi-alert-info">Connecting…</div>`);
     if (fallback) path = '/0:fallback';
 
+    let updateProgress = null;
+    if ($('#list').length && ($('#list').html().includes('spinner') || $('#spinner').length)) {
+        updateProgress = showModernSpinner('#list');
+    }
+
     async function performRequest(remainingRetries) {
         try {
-            const r = await fetch(fallback ? '/0:fallback' : path, {
+            const r = await fetchWithProgress(fallback ? '/0:fallback' : path, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestData)
-            });
+            }, updateProgress || (() => {}));
             if (!r.ok) throw new Error('Request failed with status ' + r.status);
             const res = await r.json();
             if (res && res.error && res.error.code === 401) {
@@ -468,13 +609,18 @@ function requestSearch(params, resultCallback, retries = 3) {
         page_index: params['page_index'] || 0
     };
 
+    let updateProgress = null;
+    if ($('#list').length && ($('#list').html().includes('spinner') || $('#spinner').length)) {
+        updateProgress = showModernSpinner('#list');
+    }
+
     async function performRequest(remainingRetries) {
         try {
-            const r = await fetch(`/${window.current_drive_order}:search`, {
+            const r = await fetchWithProgress(`/${window.current_drive_order}:search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(p)
-            });
+            }, updateProgress || (() => {}));
             if (!r.ok) throw new Error('Request failed with status ' + r.status);
             const res = await r.json();
             if (res && res.data === null) {
@@ -1096,18 +1242,18 @@ function onSearchResultItemClick(file_id, can_preview, rootIdx) {
     if (rootIdx === -2) { goFallback(); return; }
 
     $('#SearchModelLabel').html('Loading…');
-    $('#modal-body-space').html(`<div class="gdi-spinner-wrap"><div class="gdi-spinner"></div></div>`);
+    const updateProgress = showModernSpinner('#modal-body-space');
 
     // rootIdx >= 0: use that specific drive; -1: drive 0 walks parent chain for folder roots
     const primaryDrive = rootIdx >= 0 ? rootIdx : 0;
 
     async function tryResolve() {
         try {
-            const r = await fetch(`/${primaryDrive}:id2path`, {
+            const r = await fetchWithProgress(`/${primaryDrive}:id2path`, {
                 method: 'POST',
                 body: JSON.stringify({ id: file_id }),
                 headers: { 'Content-Type': 'application/json' }
-            });
+            }, updateProgress);
             if (r.ok) {
                 const obj = await r.json();
                 if (obj.path) {
@@ -1147,12 +1293,12 @@ function get_file(path, file, callback) {
 async function fallback(id, type) {
     if (type) {
         const cookie_folder_id = await getCookie('root_id') || '';
-        $('#content').html(`<div class="gdi-wrap"><div class="gdi-spinner-wrap" style="height:150px;" id="spinner"><div class="gdi-spinner"></div></div></div>`);
-        fetch('/0:fallback', {
+        const updateProgress = showModernSpinner('#content');
+        fetchWithProgress('/0:fallback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id }),
-        })
+        }, updateProgress)
         .then(r => { if (!r.ok) throw new Error('Request failed'); return r.json(); })
         .then(obj => dispatchFileView(obj, cookie_folder_id))
         .catch(err => { $('#content').html(renderErrorCard(err)); });
@@ -1166,12 +1312,12 @@ async function fallback(id, type) {
 // ============================================================================
 async function file(path) {
     const cookie_folder_id = await getCookie('root_id') || '';
-    $('#content').html(`<div class="gdi-wrap"><div class="gdi-spinner-wrap" style="height:150px;" id="spinner"><div class="gdi-spinner"></div></div></div>`);
-    fetch('', {
+    const updateProgress = showModernSpinner('#content');
+    fetchWithProgress('', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path }),
-    })
+    }, updateProgress)
     .then(r => { if (!r.ok) throw new Error('Request failed'); return r.json(); })
     .then(obj => dispatchFileView(obj, cookie_folder_id))
     .catch(err => { $('#content').html(renderErrorCard(err)); });
@@ -1391,12 +1537,19 @@ function file_code(name, encoded_name, size, bytes, url, ext, file_id, cookie_fo
     ));
 
     if (!UI.second_domain_for_dl) {
-        $('#code_spinner').html(`<div class="gdi-spinner-wrap"><div class="gdi-spinner"></div></div>`);
+        const updateProgress = showModernSpinner('#code_spinner');
         if (bytes <= 1024 * 1024 * 2) {
-            $.get(url, function(data) {
+            fetchWithProgress(url, { method: 'GET' }, updateProgress)
+            .then(r => { if (!r.ok) throw new Error('Failed to load code file'); return r.text(); })
+            .then(data => {
                 $('#editor').html($('<div/>').text(data).html());
                 $('#code_spinner').remove();
                 $('.gdi-code-outer').show();
+            })
+            .catch(err => {
+                $('#code_spinner').remove();
+                $('.gdi-code-outer').show();
+                $('#editor').html(`<span style="color:var(--gdi-text-muted);">Failed to load preview: ${escHtml(err.message)}</span>`);
             });
         } else {
             $('#code_spinner').remove();

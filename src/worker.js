@@ -101,7 +101,9 @@ async function getUserRole(request) {
   const session = m ? m[1].trim() : null;
   if (!session || session === 'null') return null;
   try {
-    return (await decryptString(session.split('|')[1])) || 'customer';
+    const sessionData = await verifySessionToken(session);
+    if (!sessionData) return null;
+    return (await decryptString(sessionData.split('|')[1])) || 'customer';
   } catch (_) { return null; }
 }
 
@@ -1141,8 +1143,45 @@ async function genIntegrity(data, key = null) {
   // Convert the HMAC buffer to hexadecimal string
   const hmacArray = Array.from(new Uint8Array(hmacBuffer));
   const hmacHex = hmacArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-
   return hmacHex;
+}
+
+async function signSessionToken(sessionData) {
+  const signature = await genIntegrity(sessionData);
+  return `${sessionData}.${signature}`;
+}
+
+async function verifySessionToken(token) {
+  if (!token) return null;
+  const lastDot = token.lastIndexOf('.');
+  if (lastDot === -1) return null;
+  const sessionData = token.substring(0, lastDot);
+  const signature = token.substring(lastDot + 1);
+  const expectedSignature = await genIntegrity(sessionData);
+  if (signature !== expectedSignature) {
+    console.error('Session HMAC signature verification failed!');
+    return null;
+  }
+  return sessionData;
+}
+
+async function rateLimit(ip, endpoint, limit = 5, duration = 60) {
+  if (!ip) return true;
+  const key = `rl_${endpoint}_${ip}`;
+  try {
+    const raw = await ENV.get(key);
+    let count = 0;
+    if (raw) {
+      count = parseInt(raw, 10);
+    }
+    if (count >= limit) {
+      return false;
+    }
+    await ENV.put(key, (count + 1).toString(), { expirationTtl: Math.max(60, duration) });
+    return true;
+  } catch (_) {
+    return true;
+  }
 }
 
 async function checkintegrity(expectedHex, actualHex) {
@@ -1202,6 +1241,27 @@ async function handleRequest(request, event) {
   const url = new URL(request.url);
   const path = url.pathname;
   const hostname = url.hostname;
+
+  // CSRF Check on POST state-changing endpoints
+  if (request.method === 'POST' && (path === '/copy' || path === '/admin' || path.startsWith('/admin/'))) {
+    const origin = request.headers.get('origin');
+    const expectedDomain = authConfig.redirect_domain;
+    let csrfOk = false;
+    if (origin) {
+      csrfOk = (origin === expectedDomain);
+    } else if (referer) {
+      csrfOk = referer.startsWith(expectedDomain);
+    }
+    if (environment === 'local') {
+      csrfOk = true;
+    }
+    if (!csrfOk) {
+      return new Response(JSON.stringify({ ok: false, message: 'CSRF validation failed: Blocked potential cross-site request.' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
+    }
+  }
   if (path == '/sw.js') {
     let swResp = await fetch(cdn_base + '/sw.js');
     if (!swResp.ok) {
@@ -1253,6 +1313,15 @@ async function handleRequest(request, event) {
   }
   // /findpath is handled after gds init below
   if (authConfig.enable_login) {
+    if (path === '/login' || path === '/google_callback') {
+      const rlOk = await rateLimit(user_ip, 'auth');
+      if (!rlOk) {
+        return new Response('Too Many Requests. Please wait and try again.', {
+          status: 429,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+      }
+    }
     const login_database = authConfig.login_database.toLowerCase();
     //console.log("Login Enabled")
     if (path == '/download.aspx' && !authConfig.disable_anonymous_download) {
@@ -1357,8 +1426,9 @@ async function handleRequest(request, event) {
         // kv_key is the user's role string ("admin" or "customer") for Google-login users.
         // Encode it as the 2nd session slot — /admin checks if this decrypts to "admin".
         const encryptedSession = `${await encryptString(username)}|${await encryptString(kv_key || 'customer')}|${await encryptString(session_time.toString())}`;
+        const signedSession = await signSessionToken(encryptedSession);
         if (authConfig.single_session) {
-          await ENV.put(username + '_session', encryptedSession);
+          await ENV.put(username + '_session', signedSession);
         }
         if (authConfig.ip_changed_action && user_ip) {
           await ENV.put(username + '_ip', user_ip);
@@ -1367,7 +1437,7 @@ async function handleRequest(request, event) {
           status: 302,
           headers: {
             'Location': '/',
-            'Set-Cookie': `session=${encryptedSession}; path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${86400 * authConfig.login_days}`,
+            'Set-Cookie': `session=${signedSession}; path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${86400 * authConfig.login_days}`,
           }
         });
         return response;
@@ -1397,9 +1467,19 @@ async function handleRequest(request, event) {
           }
           return login();
         }
+        const sessionData = await verifySessionToken(session);
+        if (!sessionData) {
+          if (request.method === 'POST') {
+            return new Response(JSON.stringify({ ok: false, message: 'Invalid session signature. Please log in again.' }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            });
+          }
+          return login();
+        }
         let username;
         try {
-          username = await decryptString(session.split('|')[0]);
+          username = await decryptString(sessionData.split('|')[0]);
         } catch (_) {
           if (request.method === 'POST') {
             return new Response(JSON.stringify({ ok: false, message: 'Invalid session. Please log in again.' }), {
@@ -1431,7 +1511,7 @@ async function handleRequest(request, event) {
         }
         let session_time;
         try {
-          session_time = await decryptString(session.split('|')[2]);
+          session_time = await decryptString(sessionData.split('|')[2]);
         } catch (_) {
           if (request.method === 'POST') {
             return new Response(JSON.stringify({ ok: false, message: 'Invalid session. Please log in again.' }), {
@@ -1663,15 +1743,19 @@ async function handleRequest(request, event) {
     if (!session) {
       return new Response('', { status: 302, headers: { 'Location': '/login' } });
     }
+    const sessionData = await verifySessionToken(session);
+    if (!sessionData) {
+      return new Response('', { status: 302, headers: { 'Location': '/login' } });
+    }
     let adminEmail;
     try {
-      adminEmail = await decryptString(session.split('|')[0]);
+      adminEmail = await decryptString(sessionData.split('|')[0]);
     } catch (_) {
       return new Response('', { status: 302, headers: { 'Location': '/login' } });
     }
     let adminRole;
     try {
-      adminRole = await decryptString(session.split('|')[1]);
+      adminRole = await decryptString(sessionData.split('|')[1]);
     } catch (_) {
       return new Response('', { status: 302, headers: { 'Location': '/login' } });
     }
