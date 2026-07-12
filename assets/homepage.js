@@ -33,18 +33,20 @@
     _simPercent = 0;
     updateSpinnerProgress(0);
     _simTimer = setInterval(function () {
-      // Simulate up to (drivesLoaded / totalDrives * 100) but cap at 90% max
-      var targetPercent = Math.min(90, (_drivesLoaded / _totalDrives) * 100);
-      // Add small increments to simulate activity
-      if (_simPercent < targetPercent) {
-        _simPercent += Math.random() * 6 + 2;
-        if (_simPercent > targetPercent) _simPercent = targetPercent;
-      } else if (_simPercent < 90) {
-        _simPercent += Math.random() * 2 + 0.5;
-        if (_simPercent > 90) _simPercent = 90;
+      // Real progress: each drive completion = proportional chunk up to 95%
+      var realTarget = Math.min(95, (_drivesLoaded / _totalDrives) * 95);
+      // Always creep forward to show activity, faster when drives have loaded
+      var increment;
+      if (_simPercent < realTarget) {
+        // Catch up to the real target quickly
+        increment = (realTarget - _simPercent) * 0.15 + 1;
+      } else {
+        // Slow creep while waiting for next drive to finish, cap at 95%
+        increment = Math.random() * 1.5 + 0.3;
       }
+      _simPercent = Math.min(95, _simPercent + increment);
       updateSpinnerProgress(_simPercent);
-    }, 150);
+    }, 120);
   }
 
   function stopSimulation() {

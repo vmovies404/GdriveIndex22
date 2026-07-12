@@ -585,6 +585,12 @@ a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
   display: flex;
   justify-content: center;
   align-items: center;
+  animation: gdi-spinner-rotate 2s linear infinite;
+}
+
+@keyframes gdi-spinner-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .spinner-svg {
@@ -600,7 +606,8 @@ a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
 .spinner-progress {
   stroke: var(--gdi-accent);
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.15s ease;
+  transition: stroke-dashoffset 0.3s ease;
+  filter: drop-shadow(0 0 4px var(--gdi-accent));
 }
 
 .spinner-percentage {
@@ -609,6 +616,13 @@ a.gdi-row:hover .gdi-row-name { color: var(--gdi-accent); }
   font-weight: 600;
   color: var(--gdi-text);
   font-family: var(--gdi-font);
+  /* counter-rotate so text stays upright while the ring spins */
+  animation: gdi-spinner-counter-rotate 2s linear infinite;
+}
+
+@keyframes gdi-spinner-counter-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
 }
 
 /* ── Empty folder ──────────────────────────────────────────── */
