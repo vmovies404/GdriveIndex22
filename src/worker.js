@@ -2912,7 +2912,14 @@ class googleDrive {
       await sleep(800 * (i + 1));
     }
     if (!response.ok) {
-      throw new Error(`Per-drive token fetch failed with status ${response.status}`);
+      let errText = "";
+      try {
+        const errObj = await response.clone().json();
+        errText = ` - ${errObj.error}: ${errObj.error_description || "No description"}`;
+      } catch (_) {
+        try { errText = " - " + await response.clone().text(); } catch (__) { /* ignore */ }
+      }
+      throw new Error(`Per-drive token fetch failed with status ${response.status}${errText}`);
     }
     const obj = await response.json();
     if (!obj.access_token) {
