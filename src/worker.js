@@ -885,7 +885,7 @@ const admin_html = `<!DOCTYPE html>
             .map(r => '<option value="' + r + '">' + r + '</option>')
             .join('');
           
-          const revokeButton = isSelf ? '' : '<button class="btn btn-ghost btn-sm ms-1" onclick="revokeSessions(\'' + u.email + '\')" title="Revoke all active sessions"><i class="bi bi-shield-x text-warning"></i> Revoke</button>';
+          const revokeButton = isSelf ? '' : '<button class="btn btn-ghost btn-sm ms-1" onclick="revokeSessions(&apos;' + u.email + '&apos;)" title="Revoke all active sessions"><i class="bi bi-shield-x text-warning"></i> Revoke</button>';
 
           return '<tr>' +
             '<td>' + (isSelf ? u.email + ' <span style="color:#8b9ab0;font-size:11px;">(you)</span>' : u.email) + '</td>' +
