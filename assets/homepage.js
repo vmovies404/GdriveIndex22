@@ -12,6 +12,48 @@
   var names     = window.drive_names || [];
   var UI        = window.UI          || {};
 
+  // ── Modern spinner progress helper ──────────────────────────────────────────
+  var _totalDrives   = names.length || 1;
+  var _drivesLoaded  = 0;
+  var _simPercent    = 0;
+  var _simTimer      = null;
+
+  function updateSpinnerProgress(percent) {
+    var pctEl  = document.getElementById('spinner-percent');
+    var ringEl = document.querySelector('.spinner-progress');
+    if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+    if (ringEl) {
+      var circumference = 2 * Math.PI * 20; // 125.66
+      var offset = circumference - (percent / 100) * circumference;
+      ringEl.style.strokeDashoffset = offset;
+    }
+  }
+
+  function startSimulation() {
+    _simPercent = 0;
+    updateSpinnerProgress(0);
+    _simTimer = setInterval(function () {
+      // Simulate up to (drivesLoaded / totalDrives * 100) but cap at 90% max
+      var targetPercent = Math.min(90, (_drivesLoaded / _totalDrives) * 100);
+      // Add small increments to simulate activity
+      if (_simPercent < targetPercent) {
+        _simPercent += Math.random() * 6 + 2;
+        if (_simPercent > targetPercent) _simPercent = targetPercent;
+      } else if (_simPercent < 90) {
+        _simPercent += Math.random() * 2 + 0.5;
+        if (_simPercent > 90) _simPercent = 90;
+      }
+      updateSpinnerProgress(_simPercent);
+    }, 150);
+  }
+
+  function stopSimulation() {
+    if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
+    updateSpinnerProgress(100);
+  }
+
+  startSimulation();
+
   // ── Fetch all pages from the root of one drive ─────────────────────────────
   function fetchAllFromDrive(driveIdx) {
     var items     = [];
@@ -33,7 +75,7 @@
       })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (res) {
-        if (!res || !res.data || !res.data.files) return items;
+        if (!res || !res.data || !res.data.files) { _drivesLoaded++; return items; }
         res.data.files.forEach(function (f) { f._driveIdx = driveIdx; });
         items = items.concat(res.data.files);
         if (res.nextPageToken) {
@@ -41,9 +83,10 @@
           pageIndex++;
           return next();
         }
+        _drivesLoaded++;
         return items;
       })
-      .catch(function () { return items; });
+      .catch(function () { _drivesLoaded++; return items; });
     }
 
     return next();
@@ -181,6 +224,7 @@
   // ── Main: fetch → merge → sort → display ───────────────────────────────────
   Promise.all(names.map(function (_, i) { return fetchAllFromDrive(i); }))
     .then(function (results) {
+      stopSimulation();
       var merged = [].concat.apply([], results);
 
       // Sort: folders first (A→Z), then files (A→Z)
@@ -223,6 +267,7 @@
       goToPage(1);
     })
     .catch(function () {
+      stopSimulation();
       var listEl = document.getElementById('list');
       if (listEl) {
         listEl.innerHTML =

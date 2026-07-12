@@ -290,7 +290,7 @@ const homepage = `<!DOCTYPE html>
           <span class="gdi-col-size">Size</span>
           <span class="gdi-col-acts"></span>
         </div>
-        <div id="list"><div class="gdi-spinner-wrap" id="spinner"><div class="gdi-spinner"></div></div></div>
+        <div id="list"><div class="gdi-spinner-wrap" id="spinner"><div class="gdi-modern-spinner"><svg class="spinner-svg" viewBox="0 0 50 50"><circle class="spinner-bg" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle><circle class="spinner-progress" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-dasharray="125.66" stroke-dashoffset="125.66"></circle></svg><div class="spinner-percentage" id="spinner-percent">0%</div></div></div></div>
         <div id="hp-pagination" style="display:none;padding:8px 12px;border-top:1px solid var(--gdi-border);background:var(--gdi-surface-2);align-items:center;justify-content:space-between;gap:8px;">
           <button id="hp-prev" class="gdi-btn gdi-btn-ghost gdi-btn-icon" disabled><i class="bi bi-chevron-left"></i> Prev</button>
           <span id="hp-page-info" style="font-size:12px;color:var(--gdi-text-muted);"></span>
