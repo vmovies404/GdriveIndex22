@@ -6,6 +6,10 @@ compatibility_date = "2024-09-23"
 # Leave commented until that migration is done.
 # compatibility_flags = ["nodejs_compat"]
 
+[observability]
+enabled = true
+head_sampling_rate = 1
+
 # KV Namespace binding — used for user sessions, single_session, ip_lock, and KV login_database
 # Workers Paid plan recommended for production KV usage (free tier has lower limits)
 [[kv_namespaces]]
