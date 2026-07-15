@@ -16,9 +16,9 @@ const blocked_asn = []; // add ASN numbers from http://www.bgplookingglass.com/l
 const CDN_VERSION = '2.5.9'; // auto-updated by npm run build
 const authConfig = {
   "siteName": "GDI Test", // Website name
-  "client_id": "YOUR_CLIENT_ID", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
-  "client_secret": "YOUR_CLIENT_SECRET", // Client Secret from Google Cloud Console (sentinel: real value via KV secret CLIENT_SECRET)
-  "refresh_token": "YOUR_REFRESH_TOKEN", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
+  "client_id": "536511502433-4lhrrs15m2md1uio8lnuegobv4v9rc19.apps.googleusercontent.com", // Client id from Google Cloud Console (sentinel: real value via KV secret CLIENT_ID)
+  "client_secret": "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", // Client Secret from Google Cloud Console (sentinel: real value via KV secret CLIENT_SECRET)
+  "refresh_token": "1//0gEbPRpURMzOpCgYIARAAGBASNwF-L9Irpa6_wdNblvioGW5q--Qu1ta_ZV7byBWeLpMOacPH0gzax8D2dCXqodCO1jTYwtdbeVc", // Authorize token (sentinel: real value via KV secret REFRESH_TOKEN)
   "service_account": false, // true if you're using Service Account instead of user account
   "service_account_json": randomserviceaccount, // don't touch this one
   "files_list_page_size": 100,
